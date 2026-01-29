@@ -1,1 +1,1 @@
-# media-renamer
+# MediaRenamer
