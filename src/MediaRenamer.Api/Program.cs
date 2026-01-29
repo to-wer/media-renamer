@@ -3,58 +3,59 @@ using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Providers;
 using MediaRenamer.Core.Services;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add services to the container.
+try
+{
+    Log.Information("Starting web application");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console());
+
+    // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+    builder.Services.AddOpenApi();
 
-builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
-builder.Services.AddSingleton<IMetadataProvider>(
-    _ => new TmdbMetadataProvider(
-        builder.Configuration["TMDB:ApiKey"]!
-    )
-);
-builder.Services.AddSingleton<MetadataResolver>();
-builder.Services.AddSingleton<IRenameService, RenameService>();
-builder.Services.AddSingleton<ProposalStore>();
+    builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
+    builder.Services.AddSingleton<IMetadataProvider>(_ => new TmdbMetadataProvider(
+            builder.Configuration["TMDB:ApiKey"]!
+        )
+    );
+    builder.Services.AddSingleton<MetadataResolver>();
+    builder.Services.AddSingleton<IRenameService, RenameService>();
+    builder.Services.AddSingleton<ProposalStore>();
 
-builder.Services.AddHostedService<MediaWatcherService>();
+    builder.Services.AddHostedService<MediaWatcherService>();
 
 
-var app = builder.Build();
+    var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
+    if (app.Environment.IsDevelopment())
     {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+        app.MapOpenApi();
+    }
 
-app.Run();
+    app.UseSerilogRequestLogging();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+    app.UseHttpsRedirection();
+
+    app.Run();
+}
+catch (Exception ex)
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    Log.Fatal(ex, "Application start-up failed");
+}
+finally
+{
+    Log.CloseAndFlush();
 }
