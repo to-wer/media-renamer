@@ -1,0 +1,182 @@
+@page "/proposals"
+@rendermode InteractiveServer
+@using MediaRenamer.Core.Models
+@using MediaRenamer.Web.Services
+@inject ProposalClient Client
+
+<PageTitle>MediaRenamer Proposals</PageTitle>
+<h1 class="text-2xl font-bold mb-4">Media Rename Proposals</h1>
+
+<!-- Mobile-first Table -->
+<div class="glass-card overflow-x-auto rounded-2xl shadow-2xl">
+  <table class="min-w-[800px] w-full divide-y divide-white/10">  <!-- min-width für Mobile-Scroll -->
+    <thead class="bg-white/5 backdrop-blur-sm sticky top-0 z-10">
+      <tr>
+        <th class="px-6 py-4 text-left font-bold text-slate-200 text-sm uppercase tracking-wider">
+          📁 Datei
+        </th>
+        <th class="px-6 py-4 text-left font-bold text-slate-200 text-sm uppercase tracking-wider">
+          ✨ Vorschlag
+        </th>
+        <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider hidden md:table-cell">
+          🎬 Typ
+        </th>
+        <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider hidden lg:table-cell">
+          📅 Jahr
+        </th>
+        <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider">
+          🔔 Status
+        </th>
+        <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider">
+          ⚡ Aktion
+        </th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-white/5 bg-white/2 backdrop-blur-sm">
+      @foreach (var p in proposals)
+      {
+        <tr class="hover:bg-white/5 transition-all group">
+          <!-- Datei: FULL Name, Icon -->
+          <td class="px-6 py-5">
+            <div class="flex items-center space-x-3">
+              <span class="w-12 h-12 flex items-center justify-center rounded-xl shadow-lg flex-shrink-0
+                           @(p.Source.Type == MediaType.Movie ? "bg-gradient-to-br from-orange-400 to-amber-400" : "bg-gradient-to-br from-purple-400 to-indigo-400")">
+                <span class="text-xl font-bold">
+                  @(p.Source.Type == MediaType.Movie ? "🎥" : "📺")
+                </span>
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="font-mono text-slate-300 text-sm leading-tight">@Path.GetFileName(p.Source.OriginalPath)</div>
+                <div class="text-xs text-slate-500 mt-0.5">@{ Path.GetDirectoryName(p.Source.OriginalPath);}</div>
+              </div>
+            </div>
+          </td>
+          
+          <!-- Vorschlag: FULL Text, bold -->
+          <td class="px-6 py-5 font-bold text-emerald-300 text-lg leading-tight">
+            @p.ProposedName
+          </td>
+          
+          <!-- Typ: Icon + Badge -->
+          <td class="px-6 py-5 text-center hidden md:table-cell">
+            <span class="inline-flex px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-sm font-bold text-slate-200 shadow-md">
+              @(p.Source.Type == MediaType.Movie ? "🎬 Film" : "📺 Serie")
+            </span>
+          </td>
+          
+          <!-- Jahr: centered -->
+          <td class="px-6 py-5 text-center hidden lg:table-cell text-lg font-bold text-slate-200">
+            @p.Source.Year
+          </td>
+          
+          <!-- Status: fixed, no wrap -->
+          <td class="px-6 py-5 text-center whitespace-nowrap">
+            @if (p.RequiresApproval)
+            {
+              <span class="inline-flex px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 
+                           text-yellow-300 border-2 border-yellow-500/40 rounded-xl text-sm font-bold 
+                           shadow-lg animate-pulse">
+                ⏳ Warten auf Approval
+              </span>
+            }
+            else
+            {
+              <span class="inline-flex px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 
+                           text-emerald-300 border-2 border-emerald-500/40 rounded-xl text-sm font-bold 
+                           shadow-lg">
+                ✅ Umbenannt
+              </span>
+            }
+          </td>
+          
+          <!-- Buttons: immer nebeneinander -->
+          <td class="px-6 py-5 text-center whitespace-nowrap">
+            @if (p.RequiresApproval)
+            {
+              <div class="flex gap-2 justify-center">
+                <button class="btn-primary text-sm px-5 py-2.5 shadow-xl hover:shadow-2xl hover:scale-105 min-w-[80px]"
+                        @onclick="() => Approve(p)">
+                  <span class="inline-flex items-center gap-1">
+                    ✅ Approve
+                  </span>
+                </button>
+                <button class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 
+                               text-white text-sm px-5 py-2.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl 
+                               hover:scale-105 transition-all duration-200 min-w-[80px]"
+                        @onclick="() => Reject(p)">
+                  ❌ Reject
+                </button>
+              </div>
+            }
+            else
+            {
+              <span class="text-emerald-400 text-sm font-bold bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/30">
+                ✅ Erledigt
+              </span>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+
+@code {
+    private List<RenameProposal> proposals = new();
+    private Timer? timer;
+    private bool isLoading;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProposals();
+
+        timer = new(async _ =>
+        {
+          await InvokeAsync(async () =>
+          {
+            await LoadProposals();
+            StateHasChanged();
+          });
+        }, null, 0, 5000);
+    }
+
+    private async Task LoadProposals()
+    {
+      try
+      {
+        proposals = await Client.GetProposalsAsync();
+      }
+      catch (Exception ex)
+      {
+        // Log oder Toast-Error
+        Console.WriteLine($"LoadProposals Error: {ex.Message}");
+      }
+    }
+
+    private async Task Approve(RenameProposal proposal)
+    {
+        await Client.ApproveAsync(proposal.Source.OriginalPath);
+        await LoadProposals();
+    }
+
+    private async Task Reject(RenameProposal proposal)
+    {
+        await Client.RejectAsync(proposal.Source.OriginalPath);
+        await LoadProposals();
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+      timer?.Dispose();
+    }
+    
+    private async Task Refresh()
+    {
+      isLoading = true;
+      StateHasChanged();
+      proposals = await Client.GetProposalsAsync();
+      isLoading = false;
+      StateHasChanged();
+    }
+}

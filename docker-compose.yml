@@ -1,0 +1,44 @@
+services:
+  renamer-api:
+    build:
+      context: .
+      dockerfile: src/MediaRenamer.Api/Dockerfile
+    ports:
+      - "${RENAMER_API_PORT:-5000}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${RENAMER_API_ENVIRONMENT:-Development}
+      - TMDB_API_KEY=${TMDB_API_KEY:-your-tmdb-api-key-here}
+      - Media__WatchPath=/watch
+      - Media__OutputPath=/output
+    volumes:
+      - ./data:/app/data
+      - ./data/watch:/watch
+      - ./data/output:/output
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/media/proposals" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+  
+  renamer-web:
+    build:
+      context: .
+      dockerfile: src/MediaRenamer.Web/Dockerfile
+    ports:
+      - "${RENAMER_WEB_PORT:-5001}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${RENAMER_WEB_ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
+      - ApiBaseUrl=http://renamer-api:8080
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    depends_on:
+      renamer-api:
+        condition: service_healthy

@@ -1,10 +1,13 @@
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
+using Microsoft.Extensions.Options;
 
 namespace MediaRenamer.Core.Services;
 
-public class RenameService : IRenameService
+public class RenameService(IOptions<MediaSettings> settings) : IRenameService
 {
+    private readonly MediaSettings _settings = settings.Value;
+    
     public RenameProposal CreateProposal(MediaFile file)
     {
         var name = file.Type switch
@@ -18,6 +21,16 @@ public class RenameService : IRenameService
             _ => file.FileName
         };
 
+        if (!string.IsNullOrEmpty(file.Resolution))
+        {
+            name = $"{name} [{file.Resolution}]";
+        }
+        
+        if (!string.IsNullOrEmpty(file.Codec))
+        {
+            name = $"{name} [{file.Codec}]";
+        }
+
         return new RenameProposal
         {
             Source = file,
@@ -29,9 +42,11 @@ public class RenameService : IRenameService
     public Task ExecuteAsync(RenameProposal proposal)
     {
         var target = Path.Combine(
-            Path.GetDirectoryName(proposal.Source.OriginalPath)!,
+            _settings.OutputPath,
             proposal.ProposedName + Path.GetExtension(proposal.Source.OriginalPath)
         );
+        
+        Directory.CreateDirectory(_settings.OutputPath);
 
         File.Move(proposal.Source.OriginalPath, target);
         return Task.CompletedTask;

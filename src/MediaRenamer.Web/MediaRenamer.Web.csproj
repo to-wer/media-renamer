@@ -14,4 +14,27 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\MediaRenamer.Core\MediaRenamer.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="tools\tailwindcss-windows-x64.exe" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="tools\tailwindcss-linux-x64" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <IsWindowsX64 Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(OSArchitecture)' == 'X64'">true</IsWindowsX64>
+        <IsLinuxX64 Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$(OSArchitecture)' == 'X64'">true</IsLinuxX64>
+        <!-- weitere Plattformen: IsLinuxArm64, IsMacOSX64 etc. -->
+    </PropertyGroup>
+
+    <Target Name="TailwindWindows" BeforeTargets="Build" Condition="$(IsWindowsX64) == true">
+        <Exec Command="tools\tailwindcss-windows-x64.exe -c tailwind.config.cjs -i Styles/app.input.css -o wwwroot/app.css --minify" />
+    </Target>
+
+    <Target Name="TailwindLinux" BeforeTargets="Build" Condition="$(IsLinuxX64) == true">
+        <Exec Command="chmod +x tools/tailwindcss-linux-x64" />
+        <Exec Command="tools/tailwindcss-linux-x64 -c tailwind.config.cjs -i Styles/app.input.css -o wwwroot/app.css --minify" />
+    </Target>
 </Project>

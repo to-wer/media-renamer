@@ -1,7 +1,54 @@
 ﻿@page "/"
+@using MediaRenamer.Web.Services
+@inject ProposalClient Client
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>MediaRenamer Dashboard</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="space-y-8">
+  <!-- Hero -->
+  <div class="text-center py-16 px-8 media-card">
+    <div class="w-24 h-24 bg-gradient-to-r from-emerald-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+      🎬
+    </div>
+    <h1 class="text-5xl md:text-6xl font-black bg-gradient-to-r from-emerald-400 via-purple-400 to-emerald-500 bg-clip-text text-transparent mb-6">
+      MediaRenamer
+    </h1>
+    <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
+      Automatische Namenskorrektur für deine Film- & Serien-Sammlung. TMDB-Integration, Live-Proposals, One-Click-Approval.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="/proposals" class="btn-media btn-approve text-lg py-3 px-8 w-full sm:w-auto">
+        🚀 Zu den Proposals
+      </a>
+    </div>
+  </div>
 
-Welcome to your new app.
+  <!-- Stats Cards (optional – via API erweitern) -->
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="media-card p-8 text-center">
+      <div class="text-4xl font-bold text-emerald-400 mb-2">@pendingCount</div>
+      <div class="text-gray-400 text-sm uppercase tracking-wide">Offene Proposals</div>
+    </div>
+    <div class="media-card p-8 text-center">
+      <div class="text-4xl font-bold text-purple-400 mb-2">@approvedCount</div>
+      <div class="text-gray-400 text-sm uppercase tracking-wide">Genehmigt</div>
+    </div>
+    <div class="media-card p-8 text-center">
+      <div class="text-4xl font-bold text-gray-400 mb-2">@rejectedCount</div>
+      <div class="text-gray-400 text-sm uppercase tracking-wide">Abgelehnt</div>
+    </div>
+  </div>
+</div>
+
+@code {
+  private int pendingCount = 3;
+  private int approvedCount = 12;
+  private int rejectedCount = 1;
+
+  protected override async Task OnInitializedAsync()
+  {
+    // Hier echte Stats von API laden
+    // var stats = await Client.GetStatsAsync();
+  }
+}

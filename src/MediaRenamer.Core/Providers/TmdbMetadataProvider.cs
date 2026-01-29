@@ -56,7 +56,7 @@ public class TmdbMetadataProvider : IMetadataProvider
             language: "de-DE"
         );
 
-        file.Title = seriesName;
+        file.Title = show.Name;
         file.Year = episode.AirDate?.Year;
         file.EpisodeTitle = episode.Name;
 

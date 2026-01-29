@@ -3,8 +3,17 @@
 
 <PageTitle>Error</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<!-- Error.razor -->
+<div class="min-h-screen flex items-center justify-center p-8 glass-card max-w-md mx-auto">
+    <div class="text-center">
+        <div class="w-28 h-28 bg-rose-500/20 border-4 border-rose-500/40 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+            ⚠️
+        </div>
+        <h1 class="text-5xl font-black text-rose-400 mb-6 drop-shadow-lg">Oops!</h1>
+        <p class="text-xl text-slate-400 mb-12 leading-relaxed">Etwas ist schiefgelaufen.</p>
+        <a href="/" class="btn-primary px-12 py-4 shadow-2xl text-lg">🏠 Home</a>
+    </div>
+</div>
 
 @if (ShowRequestId)
 {

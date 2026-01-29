@@ -1,9 +1,50 @@
 ﻿@inherits LayoutComponentBase
 
-@Body
+<div class="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <!-- Header -->
+    <header class="bg-gray-900/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-purple-500 bg-clip-text text-transparent">
+                    🎬 MediaRenamer
+                </h1>
+                <nav class="flex items-center space-x-4">
+                    <!-- Home: dynamisch active -->
+                    <NavLink href="/" Match="NavLinkMatch.All"
+                             class="px-6 py-3 text-lg font-semibold rounded-2xl transition-all duration-300
+                text-slate-300 hover:text-white hover:bg-white/10 hover:shadow-md ring-1 ring-transparent hover:ring-white/20 border border-transparent
+                [&[aria-current=page]]:bg-emerald-500/30 [&[aria-current=page]]:text-emerald-200 [&[aria-current=page]]:border-emerald-400/50
+                [&[aria-current=page]]:shadow-emerald-500/25 [&[aria-current=page]]:ring-emerald-400/40 [&[aria-current=page]]:scale-[1.02]">
+                        🏠 Home
+                    </NavLink>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+                    <!-- Proposals: dynamisch active -->
+                    <NavLink href="/proposals" Match="NavLinkMatch.All"
+                             class="px-6 py-3 text-lg font-semibold rounded-2xl transition-all duration-300
+                text-slate-300 hover:text-white hover:bg-white/10 hover:shadow-md ring-1 ring-transparent hover:ring-white/20 border border-transparent
+                [&[aria-current=page]]:bg-emerald-500/30 [&[aria-current=page]]:text-emerald-200 [&[aria-current=page]]:border-emerald-400/50
+                [&[aria-current=page]]:shadow-emerald-500/25 [&[aria-current=page]]:ring-emerald-400/40 [&[aria-current=page]]:scale-[1.02]">
+                        📋 Proposals
+                    </NavLink>
+                </nav>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto px-6 py-12 w-full">
+        @Body
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-950/50 border-t border-gray-800 mt-auto py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            Powered by TMDB & Blazor • © 2026 Torsten Werner
+        </div>
+    </footer>
 </div>
+
+@code {
+    // Blazor Error UI bleibt gleich
+}

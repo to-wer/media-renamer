@@ -1,6 +1,7 @@
 using MediaRenamer.Api.Background;
 using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
+using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Providers;
 using MediaRenamer.Core.Services;
 using Serilog;
@@ -25,6 +26,9 @@ try
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
+    builder.Services.Configure<MediaSettings>(
+        builder.Configuration.GetSection("Media"));
+    
     builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
     builder.Services.AddSingleton<IMetadataProvider>(_ => new TmdbMetadataProvider(
             builder.Configuration["TMDB:ApiKey"]!
@@ -36,6 +40,7 @@ try
 
     builder.Services.AddHostedService<MediaWatcherService>();
 
+    builder.Services.AddControllers();
 
     var app = builder.Build();
 
@@ -49,6 +54,7 @@ try
 
     app.UseHttpsRedirection();
 
+    app.MapControllers();
     app.Run();
 }
 catch (Exception ex)
