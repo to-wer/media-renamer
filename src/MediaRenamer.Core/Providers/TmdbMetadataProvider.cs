@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 using TMDbLib.Client;
@@ -40,9 +41,7 @@ public class TmdbMetadataProvider : IMetadataProvider
 
     private async Task<MediaFile?> EnrichEpisode(MediaFile file)
     {
-        var seriesName = file.FileName.Split("S", StringSplitOptions.RemoveEmptyEntries)[0]
-            .Replace('.', ' ')
-            .Trim();
+        var seriesName = ExtractSeriesName(file.FileName);
 
         var search = await _client.SearchTvShowAsync(seriesName, language: "de-DE");
         var show = search.Results.FirstOrDefault();
@@ -57,9 +56,24 @@ public class TmdbMetadataProvider : IMetadataProvider
             language: "de-DE"
         );
 
-        file.Title = episode.Name;
+        file.Title = seriesName;
         file.Year = episode.AirDate?.Year;
+        file.EpisodeTitle = episode.Name;
 
         return file;
+    }
+    
+    private string ExtractSeriesName(string filename)
+    {
+        var episodeMatch = Regex.Match(filename, @"S(\d+)E(\d+)", RegexOptions.IgnoreCase);
+
+        if (!episodeMatch.Success)
+            return filename;
+
+        var seriesName = filename.Substring(0, episodeMatch.Index)
+            .Replace('.', ' ')
+            .Trim();
+
+        return seriesName;
     }
 }

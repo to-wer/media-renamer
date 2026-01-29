@@ -12,6 +12,7 @@ public class MediaFile
 
     public int? Season { get; set; }
     public int? Episode { get; set; }
+    public string? EpisodeTitle { get; set; }
 
     public string? Resolution { get; set; }
     public string? Codec { get; set; }

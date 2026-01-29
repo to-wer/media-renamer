@@ -1,4 +1,5 @@
 using MediaRenamer.Api.Background;
+using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Providers;
 using MediaRenamer.Core.Services;
@@ -17,6 +18,7 @@ builder.Services.AddSingleton<IMetadataProvider>(
 );
 builder.Services.AddSingleton<MetadataResolver>();
 builder.Services.AddSingleton<IRenameService, RenameService>();
+builder.Services.AddSingleton<ProposalStore>();
 
 builder.Services.AddHostedService<MediaWatcherService>();
 

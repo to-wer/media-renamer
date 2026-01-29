@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Services;
 
@@ -10,6 +11,7 @@ public class MediaWatcherService : BackgroundService
     private readonly IMediaScanner _scanner;
     private readonly MetadataResolver _resolver;
     private readonly IRenameService _renamer;
+    private readonly ProposalStore _proposalStore;
 
     private readonly string _watchPath;
     private readonly TimeSpan _scanInterval = TimeSpan.FromSeconds(30);
@@ -20,12 +22,14 @@ public class MediaWatcherService : BackgroundService
         IMediaScanner scanner,
         MetadataResolver resolver,
         IRenameService renamer,
-        IConfiguration config)
+        IConfiguration config,
+        ProposalStore proposalStore)
     {
         _logger = logger;
         _scanner = scanner;
         _resolver = resolver;
         _renamer = renamer;
+        _proposalStore = proposalStore;
 
         _watchPath = config["Media:WatchPath"] ?? "/media/incoming";
     }
@@ -38,6 +42,7 @@ public class MediaWatcherService : BackgroundService
         {
             try
             {
+                // Alle Mediendateien scannen
                 var files = Directory
                     .GetFiles(_watchPath, "*.*", SearchOption.AllDirectories)
                     .Where(f => f.EndsWith(".mkv") || f.EndsWith(".mp4"));
@@ -49,14 +54,19 @@ public class MediaWatcherService : BackgroundService
 
                     _logger.LogInformation("New file detected: {file}", file);
 
+                    // Datei analysieren
                     var mediaFile = await _scanner.AnalyzeAsync(file);
                     var enriched = await _resolver.ResolveAsync(mediaFile);
 
+                    // Vorschlag erstellen
                     var proposal = _renamer.CreateProposal(enriched!);
 
-                    // TODO: optional: speichere Proposal in DB oder Queue für UI
-                    _logger.LogInformation("Proposal created: {proposal}", proposal.ProposedName);
+                    // Proposal im ProposalStore speichern
+                    _proposalStore.Add(proposal);
 
+                    _logger.LogInformation("Proposal created (awaiting approval): {proposal}", proposal.ProposedName);
+
+                    // Markiere Datei als "bereits verarbeitet", um doppelte Vorschläge zu verhindern
                     _processedFiles.TryAdd(file, true);
                 }
             }
@@ -65,6 +75,7 @@ public class MediaWatcherService : BackgroundService
                 _logger.LogError(ex, "Error in MediaWatcherService");
             }
 
+            // Warte bis zum nächsten Scan
             await Task.Delay(_scanInterval, stoppingToken);
         }
     }

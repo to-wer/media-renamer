@@ -13,7 +13,7 @@ public class RenameService : IRenameService
                 $"{file.Title} ({file.Year})",
 
             MediaType.Episode =>
-                $"{file.Title} - S{file.Season:00}E{file.Episode:00}",
+                $"{file.Title} - S{file.Season:00}E{file.Episode:00} - {file.EpisodeTitle}",
 
             _ => file.FileName
         };
