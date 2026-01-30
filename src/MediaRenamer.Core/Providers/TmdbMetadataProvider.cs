@@ -29,6 +29,13 @@ public class TmdbMetadataProvider : IMetadataProvider
     {
         var result = await _client.SearchMovieAsync(file.FileName, language: "de-DE");
 
+        if ((result?.TotalResults ?? 0) == 0)
+        {
+            // Retry without year
+            string yearlessName = Regex.Replace(file.FileName, @"\s\(\d{4}\)$", "");
+            result = await _client.SearchMovieAsync(yearlessName, language: "de-DE");
+        }
+        
         var movie = result.Results.FirstOrDefault();
         if (movie == null)
             return null;
