@@ -1,13 +1,7 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 
 RUN apt-get update && apt-get install -y \
-    libzen0t64 \
-    libmediainfo0v5 \
-    libmms0 \
-    openssl \
-    zlib1g \
-    libcurl4 \
-    libglib2.0-0 \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 USER $APP_UID

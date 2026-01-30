@@ -1,5 +1,6 @@
+using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
-using MediaInfo;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 
@@ -7,7 +8,7 @@ namespace MediaRenamer.Core.Services;
 
 public class MediaScanner : IMediaScanner
 {
-    public Task<MediaFile> AnalyzeAsync(string filePath)
+    public async Task<MediaFile> AnalyzeAsync(string filePath)
     {
         var fileName = Path.GetFileNameWithoutExtension(filePath);
 
@@ -28,29 +29,61 @@ public class MediaScanner : IMediaScanner
 
         try
         {
-            using var mi = new MediaInfo.MediaInfo();
-            mi.Open(filePath);
-    
-            // Resolution
-            var height = mi.Get(StreamKind.Video, 0, "Height");
-            if (int.TryParse(height, out var h))
+            // FFprobe JSON-Ausgabe: Erstes Video-Stream für Resolution/Codec
+            var ffprobeArgs = "-v error -select_streams v:0 -show_entries stream=width,height,codec_name -of json";
+            var jsonOutput = await RunFfprobeAsync(filePath, ffprobeArgs);
+
+            using var doc = JsonDocument.Parse(jsonOutput);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("streams", out var streams) && streams.GetArrayLength() > 0)
             {
-                media.Resolution = h switch
+                var videoStream = streams[0];
+                // mediaFile.Width = videoStream.GetProperty("width").GetInt32();
+                int height = videoStream.GetProperty("height").GetInt32();
+                media.Resolution = height switch
                 {
                     >= 2160 => "4K",
                     >= 1080 => "1080p",
                     >= 720 => "720p",
-                    _ => $"{h}p"
+                    _ => "SD"
                 };
+                string codecName = videoStream.GetProperty("codec_name").GetString() ?? "unknown";
+                media.Codec = codecName == "hevc" ? "x265" : codecName;
             }
-    
-            // Codec
-            string codec = mi.Get(StreamKind.Video, 0, "Format");
-            
-            media.Codec = codec == "HEVC" ? "x265" : codec?.ToLower() ?? "unknown";
         }
-        catch { /* fallback */ }
-        
-        return Task.FromResult(media);
+        catch
+        {
+            /* fallback */
+        }
+
+        return media;
+    }
+
+    private static async Task<string> RunFfprobeAsync(string filePath, string arguments)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "ffprobe",
+            Arguments = $"{arguments} \"{filePath}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = new Process { StartInfo = psi };
+        process.Start();
+
+        var output = await process.StandardOutput.ReadToEndAsync();
+        var error = await process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            Console.WriteLine($"FFprobe error: {error}");
+            return string.Empty;
+        }
+
+        return output;
     }
 }
