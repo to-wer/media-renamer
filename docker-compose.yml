@@ -7,7 +7,7 @@ services:
       - "${RENAMER_API_PORT:-5000}:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=${RENAMER_API_ENVIRONMENT:-Development}
-      - TMDB_API_KEY=${TMDB_API_KEY:-your-tmdb-api-key-here}
+      - TMDB__ApiKey=${TMDB_API_KEY:-your-tmdb-api-key-here}
       - Media__WatchPath=/watch
       - Media__OutputPath=/output
     volumes:
