@@ -75,13 +75,21 @@
                 ⏳ Warten auf Approval
               </span>
           }
-          else
+          else if (p.IsApproved)
           {
             <span class="inline-flex px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 
                            text-emerald-300 border-2 border-emerald-500/40 rounded-xl text-sm font-bold 
                            shadow-lg">
                 ✅ Umbenannt
               </span>
+          }
+          else if (p.IsRejected)
+          {
+            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-rose-500/20 to-pink-500/20 
+                   text-rose-300 border-2 border-rose-500/40 rounded-xl text-sm font-bold 
+                   shadow-lg">
+              ❌ Abgelehnt
+            </span>
           }
         </td>
 

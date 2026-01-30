@@ -10,6 +10,7 @@ services:
       - TMDB__ApiKey=${TMDB_API_KEY:-your-tmdb-api-key-here}
       - Media__WatchPath=/watch
       - Media__OutputPath=/output
+      - Database__ProposalDbPath=/app/data/proposals.db
     volumes:
       - ./data:/app/data
       - ./data/watch:/watch

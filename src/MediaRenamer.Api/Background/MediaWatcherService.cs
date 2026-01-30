@@ -4,6 +4,7 @@ using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaRenamer.Api.Background;
 
@@ -46,8 +47,9 @@ public class MediaWatcherService : BackgroundService
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ProposalDbContext>();
-                await db.Database.EnsureCreatedAsync(stoppingToken);
-
+                // await db.Database.EnsureCreatedAsync(stoppingToken);
+                await db.Database.MigrateAsync(stoppingToken);  
+                
                 var proposalStore = scope.ServiceProvider.GetRequiredService<ProposalStore>();
 
 
