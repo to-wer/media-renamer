@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using MediaRenamer.Api.Data;
 using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
+using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
 
 namespace MediaRenamer.Api.Background;
@@ -11,7 +13,7 @@ public class MediaWatcherService : BackgroundService
     private readonly IMediaScanner _scanner;
     private readonly MetadataResolver _resolver;
     private readonly IRenameService _renamer;
-    private readonly ProposalStore _proposalStore;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     private readonly string _watchPath;
     private readonly TimeSpan _scanInterval = TimeSpan.FromSeconds(30);
@@ -23,13 +25,13 @@ public class MediaWatcherService : BackgroundService
         MetadataResolver resolver,
         IRenameService renamer,
         IConfiguration config,
-        ProposalStore proposalStore)
+        IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         _scanner = scanner;
         _resolver = resolver;
         _renamer = renamer;
-        _proposalStore = proposalStore;
+        _scopeFactory = scopeFactory;
 
         _watchPath = config["Media:WatchPath"] ?? "/media/incoming";
     }
@@ -42,14 +44,27 @@ public class MediaWatcherService : BackgroundService
         {
             try
             {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ProposalDbContext>();
+                await db.Database.EnsureCreatedAsync(stoppingToken);
+
+                var proposalStore = scope.ServiceProvider.GetRequiredService<ProposalStore>();
+
+
                 // Alle Mediendateien scannen
                 var files = Directory
                     .GetFiles(_watchPath, "*.*", SearchOption.AllDirectories)
                     .Where(f => f.EndsWith(".mkv") || f.EndsWith(".mp4"));
 
+                var pendingFiles = (await proposalStore.GetAll()).Where(x => x.RequiresApproval);
+                var renameProposals = pendingFiles as RenameProposal[] ?? pendingFiles.ToArray();
+                
                 foreach (var file in files)
                 {
                     if (_processedFiles.ContainsKey(file))
+                        continue;
+
+                    if (renameProposals.Any(p => p.Source.OriginalPath == file))
                         continue;
 
                     _logger.LogInformation("New file detected: {file}", file);
@@ -62,7 +77,7 @@ public class MediaWatcherService : BackgroundService
                     var proposal = _renamer.CreateProposal(enriched!);
 
                     // Proposal im ProposalStore speichern
-                    _proposalStore.Add(proposal);
+                    await proposalStore.Add(proposal);
 
                     _logger.LogInformation("Proposal created (awaiting approval): {proposal}", proposal.ProposedName);
 

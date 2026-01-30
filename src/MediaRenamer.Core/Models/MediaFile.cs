@@ -2,6 +2,7 @@ namespace MediaRenamer.Core.Models;
 
 public class MediaFile
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string OriginalPath { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
 

@@ -1,7 +1,8 @@
 ﻿@page "/"
 @using MediaRenamer.Web.Services
 @inject ProposalClient Client
-@rendermode InteractiveServer
+@inject ILogger<Home> Logger
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>MediaRenamer Dashboard</PageTitle>
 
@@ -27,28 +28,32 @@
   <!-- Stats Cards (optional – via API erweitern) -->
   <div class="grid md:grid-cols-3 gap-6">
     <div class="media-card p-8 text-center">
-      <div class="text-4xl font-bold text-emerald-400 mb-2">@pendingCount</div>
+      <div class="text-4xl font-bold text-emerald-400 mb-2">@_pendingCount</div>
       <div class="text-gray-400 text-sm uppercase tracking-wide">Offene Proposals</div>
     </div>
     <div class="media-card p-8 text-center">
-      <div class="text-4xl font-bold text-purple-400 mb-2">@approvedCount</div>
+      <div class="text-4xl font-bold text-purple-400 mb-2">@_approvedCount</div>
       <div class="text-gray-400 text-sm uppercase tracking-wide">Genehmigt</div>
     </div>
     <div class="media-card p-8 text-center">
-      <div class="text-4xl font-bold text-gray-400 mb-2">@rejectedCount</div>
+      <div class="text-4xl font-bold text-gray-400 mb-2">@_rejectedCount</div>
       <div class="text-gray-400 text-sm uppercase tracking-wide">Abgelehnt</div>
     </div>
   </div>
 </div>
 
 @code {
-  private int pendingCount = 3;
-  private int approvedCount = 12;
-  private int rejectedCount = 1;
+  private int _pendingCount = 0;
+  private int _approvedCount = 0;
+  private int _rejectedCount = 0;
 
   protected override async Task OnInitializedAsync()
   {
+    Logger.LogDebug("Lade Dashboard-Statistiken...");
     // Hier echte Stats von API laden
-    // var stats = await Client.GetStatsAsync();
+    var stats = await Client.GetStatsAsync();
+    _pendingCount = stats.Pending;
+    _approvedCount = stats.Approved;
+    _rejectedCount = stats.Rejected;
   }
 }

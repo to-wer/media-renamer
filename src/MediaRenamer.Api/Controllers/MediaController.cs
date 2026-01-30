@@ -1,5 +1,6 @@
 using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
+using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +12,8 @@ public class MediaController(
     IMediaScanner scanner,
     MetadataResolver resolver,
     IRenameService renamer,
-    ProposalStore proposalStore) : ControllerBase
+    ProposalStore proposalStore,
+    ILogger<MediaController> logger) : ControllerBase
 {
     [HttpPost("scan")]
     public async Task<IActionResult> Scan([FromBody] string path)
@@ -23,28 +25,72 @@ public class MediaController(
 
         return Ok(proposal);
     }
-    
+
     [HttpGet("proposals")]
-    public IActionResult GetProposals()
-        => Ok(proposalStore.Proposals);
-    
+    public async Task<ActionResult<List<RenameProposal>>> GetProposals(
+        [FromQuery] string? sortBy = "ScanTime",
+        [FromQuery] bool descending = true)
+    {
+        var proposals = await proposalStore.GetAll(sortBy, descending);
+        return Ok(proposals);
+    }
+
     [HttpPost("approve")]
     public async Task<IActionResult> Approve([FromQuery] string filePath)
     {
-        var proposal = proposalStore.Get(filePath);
+        var proposal = await proposalStore.GetByPath(filePath);
         if (proposal == null)
             return NotFound();
 
-        proposalStore.Approve(filePath);
-        await renamer.ExecuteAsync(proposal);
+        try
+        {
+            await renamer.ExecuteAsync(proposal);
+            await proposalStore.Approve(filePath);
+        }
+        catch (Exception ex)
+        {
+            // TODO: set proposal to error state
+            if (logger.IsEnabled(LogLevel.Error))
+            {
+                logger.LogError("Error approving proposal for {filePath}: {error}", filePath, ex.Message);
+            }
+
+            return StatusCode(500, $"Error approving proposal: {ex.Message}");
+        }
 
         return Ok(proposal);
     }
-    
+
     [HttpPost("reject")]
-    public IActionResult Reject([FromQuery] string filePath)
+    public async Task<IActionResult> Reject([FromQuery] string filePath)
     {
-        proposalStore.Reject(filePath);
+        await proposalStore.Reject(filePath);
         return Ok();
     }
+
+    [HttpDelete("clear")]
+    public async Task<IActionResult> Clear()
+    {
+        await proposalStore.Clear();
+        return Ok();
+    }
+
+    [HttpGet("stats")]
+    public async Task<ActionResult<object>> GetStats()
+    {
+        var store = HttpContext.RequestServices.GetRequiredService<ProposalStore>();
+        var pending = (await store.GetAll()).Count(p => p.RequiresApproval);
+        var approved = (await store.GetAll()).Count(p => p.IsApproved);
+        var rejected = (await store.GetAll()).Count(p => p.IsRejected);
+
+        return Ok(new ProposalStats() { Pending = pending, Approved = approved, Rejected = rejected });
+    }
+
+    [HttpGet("pending")]
+    public async Task<ActionResult<List<RenameProposal>>> GetPending() =>
+        Ok(await proposalStore.GetPending());
+
+    [HttpGet("history")]
+    public async Task<ActionResult<List<RenameProposal>>> GetHistory() =>
+        Ok(await proposalStore.GetHistory());
 }
