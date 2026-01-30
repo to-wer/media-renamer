@@ -42,9 +42,10 @@ public class MediaScanner : IMediaScanner
                 int height = videoStream.GetProperty("height").GetInt32();
                 media.Resolution = height switch
                 {
-                    >= 2160 => "4K",
-                    >= 1080 => "1080p",
-                    >= 720 => "720p",
+                    > 2160 => "4K",
+                    > 1080 => "1440p",
+                    > 720 => "1080p",
+                    > 480 => "720p",
                     _ => "SD"
                 };
                 string codecName = videoStream.GetProperty("codec_name").GetString() ?? "unknown";
