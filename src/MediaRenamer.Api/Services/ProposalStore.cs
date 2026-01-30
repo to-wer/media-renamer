@@ -1,32 +1,81 @@
+using MediaRenamer.Api.Data;
 using MediaRenamer.Core.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaRenamer.Api.Services;
 
-public class ProposalStore
+public class ProposalStore(ProposalDbContext dbContext)
 {
     private readonly List<RenameProposal> _proposals = new();
 
     public IReadOnlyList<RenameProposal> Proposals => _proposals.AsReadOnly();
 
-    public void Add(RenameProposal proposal)
+    public async Task Add(RenameProposal proposal)
     {
         _proposals.Add(proposal);
+        await dbContext.Proposals.AddAsync(proposal);
+        await dbContext.SaveChangesAsync();
     }
 
-    public RenameProposal? Get(string filePath)
-        => _proposals.FirstOrDefault(p => p.Source.OriginalPath == filePath);
-
-    public void Approve(string filePath)
+    public async Task<List<RenameProposal>> GetAll(string? sortBy = "ScanTime", bool descending = true)
     {
-        var proposal = Get(filePath);
-        if (proposal != null)
-            proposal.RequiresApproval = false;
+        var query = dbContext.Proposals
+            .Include(p => p.Source)
+            .AsQueryable();
+
+        return sortBy?.ToLower() switch
+        {
+            "scantime" => descending ? await query.OrderByDescending(p => p.ScanTime).ToListAsync()
+                : await query.OrderBy(p => p.ScanTime).ToListAsync(),
+            "filename" => descending ? await query.OrderByDescending(p => p.Source.OriginalPath).ToListAsync()
+                : await query.OrderBy(p => p.Source.OriginalPath).ToListAsync(),
+            "status" => descending ? await query.OrderByDescending(p => p.IsApproved ? 2 : p.IsRejected ? 1 : 0).ToListAsync()
+                : await query.OrderBy(p => p.IsApproved ? 2 : p.IsRejected ? 1 : 0).ToListAsync(),
+            _ => await query.OrderByDescending(p => p.ScanTime).ToListAsync()
+        };
     }
 
-    public void Reject(string filePath)
+    public async Task<RenameProposal?> GetByPath(string filePath)
     {
-        var proposal = Get(filePath);
-        if (proposal != null)
-            _proposals.Remove(proposal);
+        return await dbContext.Proposals
+            .Include(p => p.Source)
+            .FirstOrDefaultAsync(p => p.Source.OriginalPath == filePath);
     }
+    
+    public async Task Approve(string filePath)
+    {
+        var prop = await GetByPath(filePath);
+        if (prop != null)
+        {
+            prop.RequiresApproval = false;
+            prop.IsApproved = true;
+            await dbContext.SaveChangesAsync();
+        }
+    }
+
+    public async Task Reject(string filePath)
+    {
+        var prop = await GetByPath(filePath);
+        if (prop != null)
+        {
+            prop.RequiresApproval = false;
+            prop.IsRejected = true;
+            await dbContext.SaveChangesAsync();
+        }
+    }
+    
+    public async Task Clear()
+    {
+        dbContext.Proposals.RemoveRange(await dbContext.Proposals.ToListAsync());
+        await dbContext.SaveChangesAsync();
+    }
+    
+    public async Task<List<RenameProposal>> GetPending() => 
+        await dbContext.Proposals.Where(p => p.RequiresApproval).OrderByDescending(p => p.ScanTime).Include(p => p.Source).ToListAsync();
+    
+    public async Task<List<RenameProposal>> GetHistory() => 
+        await dbContext.Proposals.Where(p => p.IsApproved || p.IsRejected)
+            .OrderByDescending(p => p.ScanTime)
+            .Include(p => p.Source)
+            .ToListAsync();
 }

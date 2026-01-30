@@ -420,3 +420,8 @@ FodyWeavers.xsd
 repomix-output.*
 
 .idea/
+
+proposals.db
+proposals.db-shm
+proposals.db-wal
+identifier.sqlite
