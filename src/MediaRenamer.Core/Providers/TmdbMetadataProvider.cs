@@ -27,7 +27,9 @@ public class TmdbMetadataProvider : IMetadataProvider
 
     private async Task<MediaFile?> EnrichMovie(MediaFile file)
     {
-        var result = await _client.SearchMovieAsync(file.FileName, language: "de-DE");
+        var (baseTitle, year) = ExtractMovieInfo(file.FileName);
+
+        var result = await _client.SearchMovieAsync(baseTitle, language: "de-DE");
 
         if ((result?.TotalResults ?? 0) == 0)
         {
@@ -40,10 +42,27 @@ public class TmdbMetadataProvider : IMetadataProvider
         if (movie == null)
             return null;
 
+        if (year != null && movie.ReleaseDate?.Year.ToString() != year)
+            return null;
+        
         file.Title = movie.Title;
         file.Year = movie.ReleaseDate?.Year;
 
         return file;
+    }
+    
+    private static (string title, string? year) ExtractMovieInfo(string filename)
+    {
+        // Match: "Titel.2014.German" → alles vor Jahr + "Language"
+        var movieMatch = Regex.Match(filename, @"^(.+?)\.(\d{4})\.(German|AC3|DD|AAC|ENG|English|DL|MULTi|DTS).*?$", RegexOptions.IgnoreCase);
+        if (movieMatch.Success)
+        {
+            return (movieMatch.Groups[1].Value.Trim('.'), movieMatch.Groups[2].Value);
+        }
+
+        // Fallback: Bis Jahr (z. B. "Mein.toller.Filmtitel.2022")
+        var fallback = Regex.Match(filename, @"(.+?)\.(\d{4})");
+        return fallback.Success ? (fallback.Groups[1].Value.Trim('.'), fallback.Groups[2].Value) : (filename, null);
     }
 
     private async Task<MediaFile?> EnrichEpisode(MediaFile file)
