@@ -50,6 +50,7 @@ public class MediaController(
         catch (Exception ex)
         {
             // TODO: set proposal to error state
+            // proposal.Status = ProposalStatus.Error;
             if (logger.IsEnabled(LogLevel.Error))
             {
                 logger.LogError("Error approving proposal for {filePath}: {error}", filePath, ex.Message);
@@ -79,9 +80,9 @@ public class MediaController(
     public async Task<ActionResult<object>> GetStats()
     {
         var store = HttpContext.RequestServices.GetRequiredService<ProposalStore>();
-        var pending = (await store.GetAll()).Count(p => p.RequiresApproval);
-        var approved = (await store.GetAll()).Count(p => p.IsApproved);
-        var rejected = (await store.GetAll()).Count(p => p.IsRejected);
+        var pending = (await store.GetAll()).Count(p => p.Status == ProposalStatus.Pending);
+        var approved = (await store.GetAll()).Count(p => p.Status == ProposalStatus.Approved);
+        var rejected = (await store.GetAll()).Count(p => p.Status == ProposalStatus.Rejected);
 
         return Ok(new ProposalStats() { Pending = pending, Approved = approved, Rejected = rejected });
     }

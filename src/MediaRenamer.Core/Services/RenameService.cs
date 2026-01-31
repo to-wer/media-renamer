@@ -35,7 +35,7 @@ public class RenameService(IOptions<MediaSettings> settings) : IRenameService
         {
             Source = file,
             ProposedName = name,
-            RequiresApproval = true
+            Status = ProposalStatus.Pending
         };
     }
 

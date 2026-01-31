@@ -48,8 +48,8 @@ public class MediaWatcherService : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ProposalDbContext>();
                 // await db.Database.EnsureCreatedAsync(stoppingToken);
-                await db.Database.MigrateAsync(stoppingToken);  
-                
+                await db.Database.MigrateAsync(stoppingToken);
+
                 var proposalStore = scope.ServiceProvider.GetRequiredService<ProposalStore>();
 
 
@@ -58,13 +58,13 @@ public class MediaWatcherService : BackgroundService
                     .GetFiles(_watchPath, "*.*", SearchOption.AllDirectories)
                     .Where(f => f.EndsWith(".mkv") || f.EndsWith(".mp4"));
 
-                var pendingFiles = (await proposalStore.GetAll()).Where(x => x.RequiresApproval);
+                var pendingFiles = (await proposalStore.GetAll()).Where(x => x.Status == ProposalStatus.Pending);
                 var renameProposals = pendingFiles as RenameProposal[] ?? pendingFiles.ToArray();
-                
+
                 foreach (var file in files)
                 {
-                    if (_processedFiles.ContainsKey(file))
-                        continue;
+                    // if (_processedFiles.ContainsKey(file))
+                    //     continue;
 
                     if (renameProposals.Any(p => p.Source.OriginalPath == file))
                         continue;

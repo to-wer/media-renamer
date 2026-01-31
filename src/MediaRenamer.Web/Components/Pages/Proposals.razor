@@ -67,7 +67,7 @@
 
         <!-- Status: fixed, no wrap -->
         <td class="px-6 py-5 text-center whitespace-nowrap">
-          @if (p.RequiresApproval)
+          @if (p.Status == ProposalStatus.Pending)
           {
             <span class="inline-flex px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 
                            text-yellow-300 border-2 border-yellow-500/40 rounded-xl text-sm font-bold 
@@ -75,7 +75,7 @@
                 ⏳ Warten auf Approval
               </span>
           }
-          else if (p.IsApproved)
+          else if (p.Status == ProposalStatus.Approved)
           {
             <span class="inline-flex px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 
                            text-emerald-300 border-2 border-emerald-500/40 rounded-xl text-sm font-bold 
@@ -83,7 +83,7 @@
                 ✅ Umbenannt
               </span>
           }
-          else if (p.IsRejected)
+          else if (p.Status == ProposalStatus.Rejected)
           {
             <span class="inline-flex px-4 py-2 bg-gradient-to-r from-rose-500/20 to-pink-500/20 
                    text-rose-300 border-2 border-rose-500/40 rounded-xl text-sm font-bold 
@@ -95,7 +95,7 @@
 
         <!-- Buttons: immer nebeneinander -->
         <td class="px-6 py-5 text-center whitespace-nowrap">
-          @if (p.RequiresApproval)
+          @if (p.Status == ProposalStatus.Pending)
           {
             <div class="flex gap-2 justify-center">
               <button class="btn-primary text-sm px-5 py-2.5 shadow-xl hover:shadow-2xl hover:scale-105 min-w-[80px]"

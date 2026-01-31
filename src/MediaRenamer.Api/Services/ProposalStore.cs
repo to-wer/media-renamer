@@ -25,12 +25,15 @@ public class ProposalStore(ProposalDbContext dbContext)
 
         return sortBy?.ToLower() switch
         {
-            "scantime" => descending ? await query.OrderByDescending(p => p.ScanTime).ToListAsync()
+            "scantime" => descending
+                ? await query.OrderByDescending(p => p.ScanTime).ToListAsync()
                 : await query.OrderBy(p => p.ScanTime).ToListAsync(),
-            "filename" => descending ? await query.OrderByDescending(p => p.Source.OriginalPath).ToListAsync()
+            "filename" => descending
+                ? await query.OrderByDescending(p => p.Source.OriginalPath).ToListAsync()
                 : await query.OrderBy(p => p.Source.OriginalPath).ToListAsync(),
-            "status" => descending ? await query.OrderByDescending(p => p.IsApproved ? 2 : p.IsRejected ? 1 : 0).ToListAsync()
-                : await query.OrderBy(p => p.IsApproved ? 2 : p.IsRejected ? 1 : 0).ToListAsync(),
+            "status" => descending
+                ? await query.OrderByDescending(p => p.Status == ProposalStatus.Approved ? 2 : p.Status == ProposalStatus.Rejected ? 1 : 0).ToListAsync()
+                : await query.OrderBy(p => p.Status == ProposalStatus.Approved ? 2 : p.Status == ProposalStatus.Rejected ? 1 : 0).ToListAsync(),
             _ => await query.OrderByDescending(p => p.ScanTime).ToListAsync()
         };
     }
@@ -41,14 +44,13 @@ public class ProposalStore(ProposalDbContext dbContext)
             .Include(p => p.Source)
             .FirstOrDefaultAsync(p => p.Source.OriginalPath == filePath);
     }
-    
+
     public async Task Approve(string filePath)
     {
         var prop = await GetByPath(filePath);
-        if (prop != null)
+        if (prop is { Status: ProposalStatus.Pending })
         {
-            prop.RequiresApproval = false;
-            prop.IsApproved = true;
+            prop.Status = ProposalStatus.Approved;
             await dbContext.SaveChangesAsync();
         }
     }
@@ -56,25 +58,25 @@ public class ProposalStore(ProposalDbContext dbContext)
     public async Task Reject(string filePath)
     {
         var prop = await GetByPath(filePath);
-        if (prop != null)
+        if (prop is { Status: ProposalStatus.Pending })
         {
-            prop.RequiresApproval = false;
-            prop.IsRejected = true;
+            prop.Status = ProposalStatus.Rejected;
             await dbContext.SaveChangesAsync();
         }
     }
-    
+
     public async Task Clear()
     {
         dbContext.Proposals.RemoveRange(await dbContext.Proposals.ToListAsync());
         await dbContext.SaveChangesAsync();
     }
-    
-    public async Task<List<RenameProposal>> GetPending() => 
-        await dbContext.Proposals.Where(p => p.RequiresApproval).OrderByDescending(p => p.ScanTime).Include(p => p.Source).ToListAsync();
-    
-    public async Task<List<RenameProposal>> GetHistory() => 
-        await dbContext.Proposals.Where(p => p.IsApproved || p.IsRejected)
+
+    public async Task<List<RenameProposal>> GetPending() =>
+        await dbContext.Proposals.Where(p => p.Status == ProposalStatus.Pending).OrderByDescending(p => p.ScanTime)
+            .Include(p => p.Source).ToListAsync();
+
+    public async Task<List<RenameProposal>> GetHistory() =>
+        await dbContext.Proposals.Where(p => p.Status != ProposalStatus.Pending)
             .OrderByDescending(p => p.ScanTime)
             .Include(p => p.Source)
             .ToListAsync();
