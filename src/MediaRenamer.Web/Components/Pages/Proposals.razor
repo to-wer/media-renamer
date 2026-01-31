@@ -161,13 +161,13 @@
 
   private async Task Approve(RenameProposal proposal)
   {
-    await Client.ApproveAsync(proposal.Source.OriginalPath);
+    await Client.ApproveAsync(proposal.Id);
     await LoadProposals();
   }
 
   private async Task Reject(RenameProposal proposal)
   {
-    await Client.RejectAsync(proposal.Source.OriginalPath);
+    await Client.RejectAsync(proposal.Id);
     await LoadProposals();
   }
 

@@ -35,17 +35,17 @@ public class MediaController(
         return Ok(proposals);
     }
 
-    [HttpPost("approve")]
-    public async Task<IActionResult> Approve([FromQuery] string filePath)
+    [HttpPost("approve/{id:guid}")]
+    public async Task<IActionResult> Approve(Guid id)
     {
-        var proposal = await proposalStore.GetByPath(filePath);
+        var proposal = await proposalStore.GetById(id);
         if (proposal == null)
             return NotFound();
 
         try
         {
             await renamer.ExecuteAsync(proposal);
-            await proposalStore.Approve(filePath);
+            await proposalStore.Approve(proposal.Id);
         }
         catch (Exception ex)
         {
@@ -53,7 +53,7 @@ public class MediaController(
             // proposal.Status = ProposalStatus.Error;
             if (logger.IsEnabled(LogLevel.Error))
             {
-                logger.LogError("Error approving proposal for {filePath}: {error}", filePath, ex.Message);
+                logger.LogError("Error approving proposal for {filePath}: {error}", proposal.Source.OriginalPath, ex.Message);
             }
 
             return StatusCode(500, $"Error approving proposal: {ex.Message}");
@@ -62,10 +62,10 @@ public class MediaController(
         return Ok(proposal);
     }
 
-    [HttpPost("reject")]
-    public async Task<IActionResult> Reject([FromQuery] string filePath)
+    [HttpPost("reject/{id:guid}")]
+    public async Task<IActionResult> Reject(Guid id)
     {
-        await proposalStore.Reject(filePath);
+        await proposalStore.Reject(id);
         return Ok();
     }
 

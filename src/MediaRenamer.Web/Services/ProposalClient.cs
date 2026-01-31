@@ -15,12 +15,18 @@ public class ProposalClient(HttpClient http)
         var response = await http.PostAsync($"api/media/approve?filePath={Uri.EscapeDataString(filePath)}", null);
         response.EnsureSuccessStatusCode();
     }
+    
+    public async Task ApproveAsync(Guid proposalId)
+        => await http.PostAsync($"api/media/approve/{proposalId}", null);
 
     public async Task RejectAsync(string filePath)
     {
         var response = await http.PostAsync($"api/media/reject?filePath={Uri.EscapeDataString(filePath)}", null);
         response.EnsureSuccessStatusCode();
     }
+    
+    public async Task RejectAsync(Guid proposalId)
+        => await http.PostAsync($"api/media/reject/{proposalId}", null);
 
     public async Task<List<RenameProposal>> GetPendingAsync() =>
         await http.GetFromJsonAsync<List<RenameProposal>>("api/media/pending") ?? [];

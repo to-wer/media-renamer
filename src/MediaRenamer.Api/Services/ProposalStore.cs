@@ -45,9 +45,16 @@ public class ProposalStore(ProposalDbContext dbContext)
             .FirstOrDefaultAsync(p => p.Source.OriginalPath == filePath);
     }
 
-    public async Task Approve(string filePath)
+    public async Task<RenameProposal?> GetById(Guid id)
     {
-        var prop = await GetByPath(filePath);
+        return await dbContext.Proposals
+            .Include(p => p.Source)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+    
+    public async Task Approve(Guid id)
+    {
+        var prop = await GetById(id);
         if (prop is { Status: ProposalStatus.Pending })
         {
             prop.Status = ProposalStatus.Approved;
@@ -55,9 +62,9 @@ public class ProposalStore(ProposalDbContext dbContext)
         }
     }
 
-    public async Task Reject(string filePath)
+    public async Task Reject(Guid id)
     {
-        var prop = await GetByPath(filePath);
+        var prop = await GetById(id);
         if (prop is { Status: ProposalStatus.Pending })
         {
             prop.Status = ProposalStatus.Rejected;
