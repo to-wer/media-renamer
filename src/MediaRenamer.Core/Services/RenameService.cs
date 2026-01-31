@@ -41,6 +41,7 @@ public class RenameService(IOptions<MediaSettings> settings) : IRenameService
 
     public Task ExecuteAsync(RenameProposal proposal)
     {
+        // TODO: error handling, conflicts, logging, etc.
         var target = Path.Combine(
             _settings.OutputPath,
             proposal.ProposedName + Path.GetExtension(proposal.Source.OriginalPath)
