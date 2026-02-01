@@ -136,6 +136,7 @@
   {
     await LoadProposals();
 
+    // TODO: make interval configurable -> same as scanning in api
     _timer = new(async _ =>
     {
       await InvokeAsync(async () =>
