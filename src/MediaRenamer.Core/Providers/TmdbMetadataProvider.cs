@@ -53,14 +53,12 @@ public class TmdbMetadataProvider : IMetadataProvider
     
     private static (string title, string? year) ExtractMovieInfo(string filename)
     {
-        // Match: "Titel.2014.German" → alles vor Jahr + "Language"
         var movieMatch = Regex.Match(filename, @"^(.+?)\.(\d{4})\.(German|AC3|DD|AAC|ENG|English|DL|MULTi|DTS).*?$", RegexOptions.IgnoreCase);
         if (movieMatch.Success)
         {
             return (movieMatch.Groups[1].Value.Trim('.'), movieMatch.Groups[2].Value);
         }
-
-        // Fallback: Bis Jahr (z. B. "Mein.toller.Filmtitel.2022")
+        
         var fallback = Regex.Match(filename, @"(.+?)\.(\d{4})");
         return fallback.Success ? (fallback.Groups[1].Value.Trim('.'), fallback.Groups[2].Value) : (filename, null);
     }

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaRenamer.Api", "src\Med
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaRenamer.Web", "src\MediaRenamer.Web\MediaRenamer.Web.csproj", "{1CD2D5C9-B3D0-4C9F-BECD-115FCF78106B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaRenamer.Core.UnitTests", "tests\MediaRenamer.Core.UnitTests\MediaRenamer.Core.UnitTests.csproj", "{6185C399-1636-4CA5-A6D1-2966388CB999}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,7 @@ Global
 		{12A8BE18-9686-42C1-8CFD-DBFB232D6FCB} = {636D5309-2091-45E5-97E6-D7ABEC67BD7A}
 		{35A6D1D8-543A-4172-9D41-CAB2BAC86EE7} = {636D5309-2091-45E5-97E6-D7ABEC67BD7A}
 		{1CD2D5C9-B3D0-4C9F-BECD-115FCF78106B} = {636D5309-2091-45E5-97E6-D7ABEC67BD7A}
+		{6185C399-1636-4CA5-A6D1-2966388CB999} = {3C90C1E4-7266-4F6C-8FB4-FE5B5397A13C}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{12A8BE18-9686-42C1-8CFD-DBFB232D6FCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -39,5 +42,9 @@ Global
 		{1CD2D5C9-B3D0-4C9F-BECD-115FCF78106B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1CD2D5C9-B3D0-4C9F-BECD-115FCF78106B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1CD2D5C9-B3D0-4C9F-BECD-115FCF78106B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6185C399-1636-4CA5-A6D1-2966388CB999}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6185C399-1636-4CA5-A6D1-2966388CB999}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6185C399-1636-4CA5-A6D1-2966388CB999}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6185C399-1636-4CA5-A6D1-2966388CB999}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
