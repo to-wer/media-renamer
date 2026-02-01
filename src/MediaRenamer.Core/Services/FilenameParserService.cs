@@ -9,19 +9,20 @@ public class FilenameParserService : IFilenameParserService
 {
     private static readonly List<string> NoisePatterns =
     [
-        // Qualität/Codec
-        @"1080[p|i]", @"2160[p|i]", @"4K", @"720[p|i]", @"480[p|i]",
+        @"1080[p|i]", @"2160[p|i]", @"4k", @"720[p|i]", @"480[p|i]",
         @"x264", @"x265", @"h264", @"h265", @"hevc", @"avc", @"av1",
-        @"ac3", @"eac3", @"dd5.1", @"dd7.1", @"dts", @"truehd",
+        @"ac3", @"eac3", @"dd5\.1", @"dd7\.1", @"dts", @"truehd",
 
         // Sprachen
-        @"german", @"deutsch", @"english", @"german.dubbed", @"dl.german",
+        @"german", @"deutsch", @"german\.dubbed", @"dl\.german",
+        @"english", @"eng", @"multi", @"forced",
 
-        // Release-Gruppen (häufig am Ende)
-        @"rarbg", @"torrentgalaxy", @"yts", @"blu", @"dvdrip", @"bdrip",
+        // Releases/Gruppen
+        @"rarbg", @"yts", @"torrentgalaxy", @"blu", @"dvdrip", @"bdrip",
+        @"web[-.]?(dl|rip)", @"proper", @"repack",
 
-        // Sonstiges
-        @"\d+\.?\d*\.?(gb|mb|kb)", @"web[-.]?(dl|rip)", @"proper"
+        // Dateigröße
+        @"\d+\.?\d*\.?(gb|mb|kb)"
     ];
 
     private static readonly Regex YearRegex = new(@"\b(19|20)\d{2}\b", RegexOptions.Compiled);
@@ -46,6 +47,8 @@ public class FilenameParserService : IFilenameParserService
 
     private (string title, int? year) ExtractTitleAndYear(string normalized)
     {
+        normalized = Regex.Replace(normalized, @"^\s*\d+\.?\s*", "");
+
         foreach (var pattern in NoisePatterns)
         {
             normalized = Regex.Replace(normalized, $@"\b{pattern}\b.*?$", "", RegexOptions.IgnoreCase);
