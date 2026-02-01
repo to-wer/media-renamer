@@ -11,4 +11,15 @@ public static class StringExtensions
             
         return Regex.Replace(input, @"\s+", " ").Trim();
     }
+    
+    public static string NormalizeForParsing(this string filename)
+    {
+        return filename
+            .ToLowerInvariant()
+            .Replace('.', ' ')
+            .Replace('-', ' ')
+            .Replace('_', ' ')
+            .ReplaceMultipleSpaces()
+            .Trim();
+    }
 }

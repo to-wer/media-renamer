@@ -21,6 +21,6 @@ public class MetadataResolver
                 return result;
         }
 
-        return file;
+        return null;
     }
 }

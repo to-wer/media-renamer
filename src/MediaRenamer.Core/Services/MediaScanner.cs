@@ -6,11 +6,12 @@ using MediaRenamer.Core.Models;
 
 namespace MediaRenamer.Core.Services;
 
-public class MediaScanner : IMediaScanner
+public class MediaScanner(IFilenameParserService filenameParserService) : IMediaScanner
 {
     public async Task<MediaFile> AnalyzeAsync(string filePath)
     {
         var fileName = Path.GetFileNameWithoutExtension(filePath);
+        var parsed = filenameParserService.Parse(fileName);
 
         var episodeMatch = Regex.Match(fileName, @"S(\d+)E(\d+)", RegexOptions.IgnoreCase);
 
@@ -18,6 +19,8 @@ public class MediaScanner : IMediaScanner
         {
             OriginalPath = filePath,
             FileName = fileName,
+            ParsedTitle = parsed.NormalizedTitle,
+            Year = parsed.Year,
             Type = episodeMatch.Success ? MediaType.Episode : MediaType.Movie
         };
 

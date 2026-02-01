@@ -32,6 +32,7 @@ try
     builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Database"));
     builder.Services.Configure<MediaSettings>(builder.Configuration.GetSection("Media"));
     
+    builder.Services.AddSingleton<IFilenameParserService, FilenameParserService>();
     builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
     builder.Services.AddSingleton<IMetadataProvider>(_ => new TmdbMetadataProvider(
             builder.Configuration["TMDB:ApiKey"]!

@@ -8,16 +8,17 @@ public class FilenameParserServiceTests
     private readonly FilenameParserService _parser = new FilenameParserService();
     
     [Test]
-    public void ParsesJamesBondCorrectly()
+    [TestCase("The.Matrix.1999.1080p.BluRay.x264", "the matrix", 1999)]
+    [TestCase("001.James.Bond.007.-.Jagt.Dr.No.1962.German.AC3.DL.720p.Bluray.Rip.x264", "001 james bond 007 jagt dr no", 1962)]
+    public void ParsesJamesBondCorrectly(string filePath, string expectedName, int expectedYear)
     {
         // Arrange
         
         // Act
-        string normalized = _parser.Normalize("001.James.Bond.007.-.Jagt.Dr.No.1962.German.AC3.DL.mkv");
-        var result = _parser.ExtractTitleAndYear(normalized);
+        var result = _parser.Parse(filePath);
     
         // Assert
-        result.title.ShouldBe("001 james bond 007 jagt dr no");
-        result.year.ShouldBe(1962);
+        result.NormalizedTitle.ShouldBe(expectedName);
+        result.Year.ShouldBe(expectedYear);
     }
 }

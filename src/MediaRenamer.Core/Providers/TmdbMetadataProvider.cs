@@ -29,12 +29,14 @@ public class TmdbMetadataProvider : IMetadataProvider
     {
         var (baseTitle, year) = ExtractMovieInfo(file.FileName);
 
-        var result = await _client.SearchMovieAsync(baseTitle, language: "de-DE");
+        var result = await _client.SearchMovieAsync(file.ParsedTitle ?? baseTitle, language: "de-DE");
 
         if ((result?.TotalResults ?? 0) == 0)
         {
+            // TODO: try to get name from llm
+            
             // Retry without year
-            string yearlessName = Regex.Replace(file.FileName, @"\s\(\d{4}\)$", "");
+            var yearlessName = Regex.Replace(file.FileName, @"\s\(\d{4}\)$", "");
             result = await _client.SearchMovieAsync(yearlessName, language: "de-DE");
         }
         
