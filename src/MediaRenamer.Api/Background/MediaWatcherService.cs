@@ -16,8 +16,7 @@ public class MediaWatcherService(
     : BackgroundService
 {
     private readonly string _watchPath = config["Media:WatchPath"] ?? "/media/incoming";
-    // TODO: make configurable
-    private readonly TimeSpan _scanInterval = TimeSpan.FromSeconds(30);
+    private readonly TimeSpan _scanInterval = TimeSpan.FromSeconds(config.GetValue<int>("Media:ScanInterval"));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

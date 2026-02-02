@@ -4,6 +4,7 @@
 @using MediaRenamer.Web.Services
 @implements IAsyncDisposable
 @inject ProposalClient Client
+@inject IConfiguration Configuration
 
 <PageTitle>MediaRenamer Proposals</PageTitle>
 <h1 class="text-2xl font-bold mb-4">Media Rename Proposals</h1>
@@ -38,6 +39,7 @@
     {
       <tr class="hover:bg-white/5 transition-all group">
         <!-- Datei: FULL Name, Icon -->
+        @* TODO: force line break *@
         <td class="px-6 py-5">
           <div class="flex items-center space-x-3">
             <div class="min-w-0 flex-1">
@@ -137,6 +139,7 @@
     await LoadProposals();
 
     // TODO: make interval configurable -> same as scanning in api
+    int period = Configuration.GetValue<int>("Media:ScanInterval");
     _timer = new(async _ =>
     {
       await InvokeAsync(async () =>
@@ -144,7 +147,7 @@
         await LoadProposals();
         StateHasChanged();
       });
-    }, null, 5000, 5000);
+    }, null, 5000, period);
   }
 
   private async Task LoadProposals()

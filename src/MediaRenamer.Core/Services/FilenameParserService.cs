@@ -2,10 +2,11 @@ using System.Text.RegularExpressions;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Extensions;
 using MediaRenamer.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace MediaRenamer.Core.Services;
 
-public class FilenameParserService : IFilenameParserService
+public class FilenameParserService(ILogger<FilenameParserService> logger) : IFilenameParserService
 {
     private static readonly List<string> NoisePatterns =
     [
@@ -34,6 +35,11 @@ public class FilenameParserService : IFilenameParserService
         var noise = ExtractNoise(filename, normalized);
 
         var confidence = CalculateConfidence(title.Length, year.HasValue, noise.Count);
+
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(
+                "Parsed filename '{Filename}' to title '{Title}' (Year: {Year}, Confidence: {Confidence:P2})",
+                filename, title, year.HasValue ? year.ToString() : "N/A", confidence);
 
         return new ParsedMediaTitle(
             RawFilename: filename,
@@ -76,15 +82,15 @@ public class FilenameParserService : IFilenameParserService
 
         return noise.Distinct().ToList();
     }
-    
+
     private static double CalculateConfidence(int titleLength, bool hasYear, int noiseCount)
     {
-        var score = 0.5;  // Basis
-        
+        var score = 0.5; // Basis
+
         if (hasYear) score += 0.3;
         if (titleLength > 5 && titleLength < 100) score += 0.2;
         if (noiseCount > 0) score += 0.1;
-        
+
         return Math.Max(0, Math.Min(1, score));
     }
 

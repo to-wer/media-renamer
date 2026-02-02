@@ -1,19 +1,17 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks.Dataflow;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using TMDbLib.Client;
 
 namespace MediaRenamer.Core.Providers;
 
-public class TmdbMetadataProvider : IMetadataProvider
+public class TmdbMetadataProvider(IConfiguration configuration, ILogger<TmdbMetadataProvider> logger) : IMetadataProvider
 {
-    private readonly TMDbClient _client;
-
-    public TmdbMetadataProvider(string apiKey)
-    {
-        _client = new TMDbClient(apiKey);
-    }
+    private readonly TMDbClient _client = new(configuration["TMDb:ApiKey"] ?? throw new ArgumentNullException("TMDb:ApiKey"));
 
     public async Task<MediaFile?> EnrichAsync(MediaFile file)
     {
@@ -34,15 +32,21 @@ public class TmdbMetadataProvider : IMetadataProvider
         if ((result?.TotalResults ?? 0) == 0)
         {
             // TODO: try to get name from llm
+            if(logger.IsEnabled(LogLevel.Debug))
+                logger.LogDebug("TMDb search for '{Title}' returned no results, retrying without year.", baseTitle);
             
             // Retry without year
             var yearlessName = Regex.Replace(file.FileName, @"\s\(\d{4}\)$", "");
             result = await _client.SearchMovieAsync(yearlessName, language: "de-DE");
         }
         
-        var movie = result.Results.FirstOrDefault();
+        var movie = result.Results.FirstOrDefault(x => string.IsNullOrEmpty(year) || x.ReleaseDate?.Year.ToString() == year);
         if (movie == null)
+        {
+            if(logger.IsEnabled(LogLevel.Debug))
+                logger.LogDebug("TMDb search for '{Title}' returned no results.", baseTitle);
             return null;
+        }
 
         if (year != null && movie.ReleaseDate?.Year.ToString() != year)
             return null;

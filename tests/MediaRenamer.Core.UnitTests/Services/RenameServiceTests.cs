@@ -1,0 +1,118 @@
+using MediaRenamer.Core.Models;
+using MediaRenamer.Core.Services;
+using Microsoft.Extensions.Options;
+using NSubstitute;
+using Shouldly;
+
+namespace MediaRenamer.Core.UnitTests.Services;
+
+public class RenameServiceTests
+{
+    private readonly IOptions<MediaSettings> _settings = Substitute.For<IOptions<MediaSettings>>();
+    private RenameService _renameService;
+
+    private string _testDirectory;
+    private string _inputDirectory;
+    private string _outputDirectory;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"RenameServiceTests_{Guid.NewGuid()}");
+        _inputDirectory = Path.Combine(_testDirectory, "input");
+        _outputDirectory = Path.Combine(_testDirectory, "output");
+
+        Directory.CreateDirectory(_inputDirectory);
+        Directory.CreateDirectory(_outputDirectory);
+
+        var mediaSettings = new MediaSettings
+        {
+            WatchPath = _inputDirectory,
+            OutputPath = _outputDirectory
+        };
+        _settings.Value.Returns(mediaSettings);
+
+        _renameService = new RenameService(_settings);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (Directory.Exists(_testDirectory))
+        {
+            Directory.Delete(_testDirectory, recursive: true);
+        }
+    }
+    
+    [Test]
+    public async Task ExecuteAsync_ShouldMoveFile_WhenTargetFileDoesNotExist()
+    {
+        // Arrange
+        var sourceFileName = "SourceFile.mkv";
+        var targetFileName = "NewFileName";
+        
+        var sourceFilePath = Path.Combine(_testDirectory, sourceFileName);
+        var targetFilePath = Path.Combine(_outputDirectory, targetFileName + ".mkv");
+        
+        var testContent = "test file content";
+        await File.WriteAllTextAsync(sourceFilePath, testContent);
+        
+        var renameProposal = new RenameProposal
+        {
+            Id = Guid.NewGuid(),
+            ProposedName = targetFileName,
+            Source = new MediaFile 
+            { 
+                OriginalPath = sourceFilePath,
+                FileName = sourceFileName
+            },
+            Status = ProposalStatus.Pending,
+            ScanTime = DateTime.UtcNow
+        };
+        
+        // Act
+        await _renameService.ExecuteAsync(renameProposal);
+        
+        // Assert
+        File.Exists(sourceFilePath).ShouldBeFalse("Source file should be moved");
+        File.Exists(targetFilePath).ShouldBeTrue("Target file should exist");
+        
+        var movedContent = await File.ReadAllTextAsync(targetFilePath);
+        movedContent.ShouldBe(testContent);
+    }
+
+    [Test]
+    public async Task ExecuteAsync_ShouldThrowException_WhenTargetFileAlreadyExists()
+    {
+        // Arrange
+        var sourceFileName = "SourceFile.mkv";
+        var targetFileName = "ExistingFileName";
+
+        var sourceFilePath = Path.Combine(_inputDirectory, sourceFileName);
+        var targetFilePath = Path.Combine(_outputDirectory, targetFileName + ".mkv");
+
+        await File.WriteAllTextAsync(sourceFilePath, "source content");
+        await File.WriteAllTextAsync(targetFilePath, "existing content");
+
+        var renameProposal = new RenameProposal
+        {
+            Id = Guid.NewGuid(),
+            ProposedName = targetFileName,
+            Source = new MediaFile
+            {
+                OriginalPath = sourceFilePath,
+                FileName = sourceFileName
+            },
+            Status = ProposalStatus.Pending,
+            ScanTime = DateTime.UtcNow
+        };
+
+        // Act & Assert
+        var exception = await Should.ThrowAsync<IOException>(async () =>
+        {
+            await _renameService.ExecuteAsync(renameProposal);
+        });
+
+        exception.ShouldNotBeNull();
+    }
+}

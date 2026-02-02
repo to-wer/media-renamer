@@ -34,10 +34,7 @@ try
     
     builder.Services.AddSingleton<IFilenameParserService, FilenameParserService>();
     builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
-    builder.Services.AddSingleton<IMetadataProvider>(_ => new TmdbMetadataProvider(
-            builder.Configuration["TMDB:ApiKey"]!
-        )
-    );
+    builder.Services.AddSingleton<IMetadataProvider, TmdbMetadataProvider>();
     builder.Services.AddDbContext<ProposalDbContext>(options =>
     {
         var dbPath = builder.Configuration["Database:ProposalDbPath"] 

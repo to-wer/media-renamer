@@ -15,18 +15,7 @@ public class MediaController(
     ProposalStore proposalStore,
     ILogger<MediaController> logger) : ControllerBase
 {
-    [HttpPost("scan")]
-    public async Task<IActionResult> Scan([FromBody] string path)
-    {
-        var file = await scanner.AnalyzeAsync(path);
-        var enriched = await resolver.ResolveAsync(file);
-        if (enriched == null) return NotFound("Metadata could not be resolved.");
-        var proposal = renamer.CreateProposal(enriched);
-
-        return Ok(proposal);
-    }
-
-    [HttpGet("proposals")]
+   [HttpGet("proposals")]
     public async Task<ActionResult<List<RenameProposal>>> GetProposals(
         [FromQuery] string? sortBy = "ScanTime",
         [FromQuery] bool descending = true)
