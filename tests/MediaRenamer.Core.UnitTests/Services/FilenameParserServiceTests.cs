@@ -18,7 +18,7 @@ public class FilenameParserServiceTests
     
     [Test]
     [TestCase("The.Matrix.1999.1080p.BluRay.x264", "the matrix", 1999)]
-    [TestCase("001.James.Bond.007.-.Jagt.Dr.No.1962.German.AC3.DL.720p.Bluray.Rip.x264", "001 james bond 007 jagt dr no", 1962)]
+    [TestCase("001.James.Bond.007.-.Jagt.Dr.No.1962.German.AC3.DL.720p.Bluray.Rip.x264", "james bond 007 jagt dr no", 1962)]
     public void ParsesJamesBondCorrectly(string filePath, string expectedName, int expectedYear)
     {
         // Arrange

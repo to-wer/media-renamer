@@ -1,10 +1,12 @@
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace MediaRenamer.Core.Services;
 
-public class RenameService(IOptions<MediaSettings> settings) : IRenameService
+public class RenameService(IOptions<MediaSettings> settings, 
+    ILogger<RenameService> logger) : IRenameService
 {
     private readonly MediaSettings _settings = settings.Value;
     
@@ -41,15 +43,35 @@ public class RenameService(IOptions<MediaSettings> settings) : IRenameService
 
     public Task ExecuteAsync(RenameProposal proposal)
     {
-        // TODO: error handling, conflicts, logging, etc.
-        var target = Path.Combine(
-            _settings.OutputPath,
-            proposal.ProposedName + Path.GetExtension(proposal.Source.OriginalPath)
-        );
-        
-        Directory.CreateDirectory(_settings.OutputPath);
+        try
+        {
+            var target = Path.Combine(
+                _settings.OutputPath,
+                proposal.ProposedName + Path.GetExtension(proposal.Source.OriginalPath)
+            );
 
-        File.Move(proposal.Source.OriginalPath, target);
-        return Task.CompletedTask;
+
+            var targetDir = Path.GetDirectoryName(target);
+            if (!string.IsNullOrEmpty(targetDir))
+            {
+                Directory.CreateDirectory(targetDir);
+            }
+
+            if (File.Exists(target))
+            {
+                throw new IOException($"Target file already exists: {target}");
+            }
+
+            File.Move(proposal.Source.OriginalPath, target);
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occured while renaming the file");
+            throw new InvalidOperationException(
+                $"Failed to rename '{proposal.Source.OriginalPath}' to '{proposal.ProposedName}'", 
+                ex
+            );
+        }
     }
 }
