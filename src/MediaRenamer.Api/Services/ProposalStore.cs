@@ -36,13 +36,6 @@ public class ProposalStore(ProposalDbContext dbContext)
         };
     }
 
-    public async Task<RenameProposal?> GetByPath(string filePath)
-    {
-        return await dbContext.Proposals
-            .Include(p => p.Source)
-            .FirstOrDefaultAsync(p => p.Source.OriginalPath == filePath);
-    }
-
     public async Task<RenameProposal?> GetById(Guid id)
     {
         return await dbContext.Proposals
@@ -76,6 +69,20 @@ public class ProposalStore(ProposalDbContext dbContext)
         await dbContext.SaveChangesAsync();
     }
 
+    public async Task<ProposalStats> GetStats()
+    {
+        var pending = await dbContext.Proposals.CountAsync(p => p.Status == ProposalStatus.Pending);
+        var approved = await dbContext.Proposals.CountAsync(p => p.Status == ProposalStatus.Approved);
+        var rejected = await dbContext.Proposals.CountAsync(p => p.Status == ProposalStatus.Rejected);
+
+        return new ProposalStats
+        {
+            Pending = pending,
+            Approved = approved,
+            Rejected = rejected
+        };
+    }
+    
     public async Task<List<RenameProposal>> GetPending() =>
         await dbContext.Proposals.Where(p => p.Status == ProposalStatus.Pending).OrderByDescending(p => p.ScanTime)
             .Include(p => p.Source).ToListAsync();
