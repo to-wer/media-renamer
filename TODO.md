@@ -2,7 +2,7 @@
 
 ## 🚨 Priority 1: Critical Bugs (Fix immediately)
 
-- [ ] **RenameService**: Add error handling for existing target files (File.Move throws exception on conflict)
+- [X] **RenameService**: Add error handling for existing target files (File.Move throws exception on conflict)
 - [ ] **MediaWatcherService**: Add null-check for enriched MediaFile (crash when TMDB finds no metadata)
 - [ ] **API-Key Validation**: Validate TMDB API key at startup instead of runtime NullReferenceException
 - [ ] **MediaController.Scan**: Implement path validation (check if within WatchPath)
