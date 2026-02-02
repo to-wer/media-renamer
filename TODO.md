@@ -11,7 +11,7 @@
 
 - [ ] Write unit tests for all modules
 - [ ] Implement logging and error handling
-- [ ] Implement clear list
+- [] Implement clear list
   - ~~API endpoint~~ DONE
   - Frontend button
 - [ ] Missing directory structure for TV series

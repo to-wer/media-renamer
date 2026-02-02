@@ -31,13 +31,28 @@ try
 
     builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Database"));
     builder.Services.Configure<MediaSettings>(builder.Configuration.GetSection("Media"));
-    
+
     builder.Services.AddSingleton<IFilenameParserService, FilenameParserService>();
     builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
-    builder.Services.AddSingleton<IMetadataProvider, TmdbMetadataProvider>();
+
+    // TMDB Provider nur registrieren, wenn API-Key vorhanden ist
+    var tmdbApiKey = builder.Configuration["TMDb:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(tmdbApiKey) && tmdbApiKey != "your-tmdb-api-key-here")
+    {
+        builder.Services.AddSingleton<IMetadataProvider, TmdbMetadataProvider>();
+        Log.Information("TMDB metadata provider registered (API key found)");
+    }
+    else
+    {
+        Log.Warning("TMDB API key not configured - running WITHOUT metadata enrichment");
+    }
+
+    builder.Services.AddSingleton<IMetadataProvider, NoOpMetadataProvider>();
+
+
     builder.Services.AddDbContext<ProposalDbContext>(options =>
     {
-        var dbPath = builder.Configuration["Database:ProposalDbPath"] 
+        var dbPath = builder.Configuration["Database:ProposalDbPath"]
                      ?? "/app/db/proposals.db";
         options.UseSqlite($"Data Source={dbPath}");
     });
