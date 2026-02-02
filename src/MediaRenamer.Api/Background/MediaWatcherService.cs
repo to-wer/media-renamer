@@ -1,6 +1,7 @@
 using MediaRenamer.Api.Data;
 using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
+using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -58,6 +59,13 @@ public class MediaWatcherService(
                     {
                         if (logger.IsEnabled(LogLevel.Warning))
                             logger.LogWarning("Metadata could not be resolved for file: {file}", file);
+                        var errorProposal = new RenameProposal
+                        {
+                            Source = mediaFile,
+                            ProposedName = string.Empty,
+                            Status = ProposalStatus.Error
+                        };
+                        await proposalStore.Add(errorProposal);
                         continue;
                     }
 

@@ -6,5 +6,6 @@ public enum ProposalStatus
     Approved,
     Rejected,
     Deleted,
-    Error
+    Error,
+    Processing
 }

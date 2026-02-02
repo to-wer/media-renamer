@@ -38,8 +38,7 @@ public class MediaController(
         }
         catch (Exception ex)
         {
-            // TODO: set proposal to error state
-            // proposal.Status = ProposalStatus.Error;
+            await proposalStore.SetStatus(id, ProposalStatus.Error);
             if (logger.IsEnabled(LogLevel.Error))
             {
                 logger.LogError("Error approving proposal for {filePath}: {error}", proposal.Source.OriginalPath,

@@ -6,13 +6,8 @@ namespace MediaRenamer.Api.Services;
 
 public class ProposalStore(ProposalDbContext dbContext)
 {
-    private readonly List<RenameProposal> _proposals = new();
-
-    public IReadOnlyList<RenameProposal> Proposals => _proposals.AsReadOnly();
-
     public async Task Add(RenameProposal proposal)
     {
-        _proposals.Add(proposal);
         await dbContext.Proposals.AddAsync(proposal);
         await dbContext.SaveChangesAsync();
     }
@@ -32,8 +27,11 @@ public class ProposalStore(ProposalDbContext dbContext)
                 ? await query.OrderByDescending(p => p.Source.OriginalPath).ToListAsync()
                 : await query.OrderBy(p => p.Source.OriginalPath).ToListAsync(),
             "status" => descending
-                ? await query.OrderByDescending(p => p.Status == ProposalStatus.Approved ? 2 : p.Status == ProposalStatus.Rejected ? 1 : 0).ToListAsync()
-                : await query.OrderBy(p => p.Status == ProposalStatus.Approved ? 2 : p.Status == ProposalStatus.Rejected ? 1 : 0).ToListAsync(),
+                ? await query.OrderByDescending(p =>
+                    p.Status == ProposalStatus.Approved ? 2 : p.Status == ProposalStatus.Rejected ? 1 : 0).ToListAsync()
+                : await query.OrderBy(p =>
+                        p.Status == ProposalStatus.Approved ? 2 : p.Status == ProposalStatus.Rejected ? 1 : 0)
+                    .ToListAsync(),
             _ => await query.OrderByDescending(p => p.ScanTime).ToListAsync()
         };
     }
@@ -51,7 +49,7 @@ public class ProposalStore(ProposalDbContext dbContext)
             .Include(p => p.Source)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
-    
+
     public async Task Approve(Guid id)
     {
         var prop = await GetById(id);
@@ -87,4 +85,14 @@ public class ProposalStore(ProposalDbContext dbContext)
             .OrderByDescending(p => p.ScanTime)
             .Include(p => p.Source)
             .ToListAsync();
+
+    public async Task SetStatus(Guid id, ProposalStatus status)
+    {
+        var prop = await GetById(id);
+        if (prop != null)
+        {
+            prop.Status = status;
+            await dbContext.SaveChangesAsync();
+        }
+    }
 }
