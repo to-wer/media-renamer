@@ -87,7 +87,7 @@ public class TmdbMetadataProvider(IConfiguration configuration, ILogger<TmdbMeta
         );
 
         file.Title = show.Name;
-        file.Year = episode.AirDate?.Year;
+        file.Year = show.FirstAirDate?.Year;
         file.EpisodeTitle = episode.Name;
 
         return file;

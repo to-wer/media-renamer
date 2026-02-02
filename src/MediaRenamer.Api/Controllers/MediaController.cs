@@ -15,7 +15,7 @@ public class MediaController(
     ProposalStore proposalStore,
     ILogger<MediaController> logger) : ControllerBase
 {
-   [HttpGet("proposals")]
+    [HttpGet("proposals")]
     public async Task<ActionResult<List<RenameProposal>>> GetProposals(
         [FromQuery] string? sortBy = "ScanTime",
         [FromQuery] bool descending = true)
@@ -42,7 +42,8 @@ public class MediaController(
             // proposal.Status = ProposalStatus.Error;
             if (logger.IsEnabled(LogLevel.Error))
             {
-                logger.LogError("Error approving proposal for {filePath}: {error}", proposal.Source.OriginalPath, ex.Message);
+                logger.LogError("Error approving proposal for {filePath}: {error}", proposal.Source.OriginalPath,
+                    ex.Message);
             }
 
             return StatusCode(500, $"Error approving proposal: {ex.Message}");
@@ -69,9 +70,10 @@ public class MediaController(
     public async Task<ActionResult<object>> GetStats()
     {
         var store = HttpContext.RequestServices.GetRequiredService<ProposalStore>();
-        var pending = (await store.GetAll()).Count(p => p.Status == ProposalStatus.Pending);
-        var approved = (await store.GetAll()).Count(p => p.Status == ProposalStatus.Approved);
-        var rejected = (await store.GetAll()).Count(p => p.Status == ProposalStatus.Rejected);
+        var pending = (await store.GetPending()).Count;
+        var history = await store.GetHistory();
+        var approved = history.Count(p => p.Status == ProposalStatus.Approved);
+        var rejected = history.Count(p => p.Status == ProposalStatus.Rejected);
 
         return Ok(new ProposalStats() { Pending = pending, Approved = approved, Rejected = rejected });
     }
