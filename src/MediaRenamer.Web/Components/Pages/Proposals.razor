@@ -140,14 +140,14 @@
 
     // TODO: make interval configurable -> same as scanning in api
     int period = Configuration.GetValue<int>("Media:ScanInterval");
-    _timer = new(async _ =>
+    _timer = new Timer(async _ =>
     {
       await InvokeAsync(async () =>
       {
         await LoadProposals();
         StateHasChanged();
       });
-    }, null, 5000, period);
+    }, null, 5000, period * 1000);
   }
 
   private async Task LoadProposals()
