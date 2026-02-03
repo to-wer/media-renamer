@@ -68,7 +68,7 @@ public class MediaWatcherServiceTests
     public async Task ProcessFile_ShouldSkipFile_WhenMetadataResolutionFails()
     {
         // Arrange
-        var testFilePath = @$"{_inputDirectory}\Unknown.Movie.2024.mkv";
+        var testFilePath = Path.Combine(_inputDirectory, "Unknown.Movie.2024.mkv");
         var mediaFile = new MediaFile
         {
             OriginalPath = testFilePath,
