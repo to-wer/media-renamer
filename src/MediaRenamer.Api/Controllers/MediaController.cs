@@ -68,13 +68,8 @@ public class MediaController(
     [HttpGet("stats")]
     public async Task<ActionResult<object>> GetStats()
     {
-        var store = HttpContext.RequestServices.GetRequiredService<ProposalStore>();
-        var pending = (await store.GetPending()).Count;
-        var history = await store.GetHistory();
-        var approved = history.Count(p => p.Status == ProposalStatus.Approved);
-        var rejected = history.Count(p => p.Status == ProposalStatus.Rejected);
-
-        return Ok(new ProposalStats() { Pending = pending, Approved = approved, Rejected = rejected });
+        var proposalStats = await proposalStore.GetStats();
+        return Ok(proposalStats);
     }
 
     [HttpGet("pending")]
