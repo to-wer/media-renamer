@@ -5,13 +5,14 @@ using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TMDbLib.Client;
 
 namespace MediaRenamer.Core.Providers;
 
-public class TmdbMetadataProvider(IConfiguration configuration, ILogger<TmdbMetadataProvider> logger) : IMetadataProvider
+public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataProviderSettings, ILogger<TmdbMetadataProvider> logger) : IMetadataProvider
 {
-    private readonly TMDbClient _client = new(configuration["TMDb:ApiKey"] ?? throw new ArgumentNullException("TMDb:ApiKey"));
+    private readonly TMDbClient _client = new(metadataProviderSettings.Value.TmdbApiKey ?? throw new ArgumentException("MetadataProviders:TmdbApiKey"));
 
     public async Task<MediaFile?> EnrichAsync(MediaFile file)
     {

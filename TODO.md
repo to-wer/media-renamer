@@ -4,8 +4,8 @@
 
 - [X] **RenameService**: Add error handling for existing target files (File.Move throws exception on conflict)
 - [X] **MediaWatcherService**: Add null-check for enriched MediaFile (crash when TMDB finds no metadata)
-- [ ] **API-Key Validation**: Validate TMDB API key at startup instead of runtime NullReferenceException
-- [ ] **MediaController.Scan**: Implement path validation (check if within WatchPath)
+- [X] **API-Key Validation**: Validate TMDB API key at startup instead of runtime NullReferenceException
+- [X] **MediaController.Scan**: Implement path validation (check if within WatchPath) - Deleted controller action
 
 ## 🛠️ Priority 2: Core Functionality
 

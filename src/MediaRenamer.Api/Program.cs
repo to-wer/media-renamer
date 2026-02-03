@@ -30,14 +30,15 @@ try
     builder.Services.AddOpenApi();
 
     builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Database"));
+    builder.Services.Configure<MetadataProviderSettings>(builder.Configuration.GetSection("MetadataProviders"));
     builder.Services.Configure<MediaSettings>(builder.Configuration.GetSection("Media"));
 
     builder.Services.AddSingleton<IFilenameParserService, FilenameParserService>();
     builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
 
     // TMDB Provider nur registrieren, wenn API-Key vorhanden ist
-    var tmdbApiKey = builder.Configuration["TMDb:ApiKey"];
-    if (!string.IsNullOrWhiteSpace(tmdbApiKey) && tmdbApiKey != "your-tmdb-api-key-here")
+    var tmdbApiKey = builder.Configuration["MetadataProviders:TmdbApiKey"];
+    if (!string.IsNullOrWhiteSpace(tmdbApiKey) && tmdbApiKey != "your_tmdb_api")
     {
         builder.Services.AddSingleton<IMetadataProvider, TmdbMetadataProvider>();
         Log.Information("TMDB metadata provider registered (API key found)");
