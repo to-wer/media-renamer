@@ -12,7 +12,7 @@ public class MediaController(
     IMediaScanner scanner,
     MetadataResolver resolver,
     IRenameService renamer,
-    ProposalStore proposalStore,
+    IProposalStore proposalStore,
     ILogger<MediaController> logger) : ControllerBase
 {
     [HttpGet("proposals")]

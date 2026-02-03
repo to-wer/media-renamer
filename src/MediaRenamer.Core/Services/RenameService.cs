@@ -5,38 +5,24 @@ using Microsoft.Extensions.Options;
 
 namespace MediaRenamer.Core.Services;
 
-public class RenameService(IOptions<MediaSettings> settings, 
+public class RenameService(
+    IOptions<MediaSettings> settings,
     ILogger<RenameService> logger) : IRenameService
 {
     private readonly MediaSettings _settings = settings.Value;
-    
+
     public RenameProposal CreateProposal(MediaFile file)
     {
-        var name = file.Type switch
-        {
-            MediaType.Movie =>
-                $"{file.Title} ({file.Year})",
+        var template = file.Type == MediaType.Episode
+            ? _settings.TvSeriesTemplate
+            : _settings.MovieTemplate;
 
-            MediaType.Episode =>
-                $"{file.Title} - S{file.Season:00}E{file.Episode:00} - {file.EpisodeTitle}",
-
-            _ => file.FileName
-        };
-
-        if (!string.IsNullOrEmpty(file.Resolution))
-        {
-            name = $"{name} [{file.Resolution}]";
-        }
-        
-        if (!string.IsNullOrEmpty(file.Codec))
-        {
-            name = $"{name} [{file.Codec}]";
-        }
-
+        var proposedName = PathTemplateService.RenderTemplate(template, file);
         return new RenameProposal
         {
             Source = file,
-            ProposedName = name,
+            ProposedName = proposedName,
+            ScanTime = DateTime.UtcNow,
             Status = ProposalStatus.Pending
         };
     }
@@ -45,33 +31,36 @@ public class RenameService(IOptions<MediaSettings> settings,
     {
         try
         {
-            var target = Path.Combine(
-                _settings.OutputPath,
-                proposal.ProposedName + Path.GetExtension(proposal.Source.OriginalPath)
-            );
+            var libraryPath = proposal.Source.Type == MediaType.Episode
+                ? _settings.TvShowsPath ?? _settings.OutputPath
+                : _settings.MoviesPath ?? _settings.OutputPath;
 
+            var extension = Path.GetExtension(proposal.Source.OriginalPath);
+            var targetPath = Path.Combine(libraryPath, proposal.ProposedName + extension);
 
-            var targetDir = Path.GetDirectoryName(target);
-            if (!string.IsNullOrEmpty(targetDir))
+            var targetDir = Path.GetDirectoryName(targetPath);
+            if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
             {
                 Directory.CreateDirectory(targetDir);
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("Created directory: {Directory}", targetDir);
             }
 
-            if (File.Exists(target))
+            if (File.Exists(targetPath))
             {
-                throw new IOException($"Target file already exists: {target}");
+                throw new IOException($"Target file already exists: {targetPath}");
             }
 
-            File.Move(proposal.Source.OriginalPath, target);
+            File.Move(proposal.Source.OriginalPath, targetPath);
+            if (logger.IsEnabled(LogLevel.Information))
+                logger.LogInformation("Renamed: {Source} → {Target}",
+                    proposal.Source.OriginalPath, targetPath);
             return Task.CompletedTask;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An error occured while renaming the file");
-            throw new InvalidOperationException(
-                $"Failed to rename '{proposal.Source.OriginalPath}' to '{proposal.ProposedName}'", 
-                ex
-            );
+            throw new InvalidOperationException($"Failed to rename {proposal.Source.OriginalPath}", ex);
         }
     }
 }
