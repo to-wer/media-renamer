@@ -11,9 +11,9 @@
 
 - [ ] Write unit tests for all modules
 - [ ] Implement logging and error handling
-- [] Implement clear list
-  - ~~API endpoint~~ DONE
-  - Frontend button
+- [ ] Implement clear list
+  - [X] API endpoint
+  - [ ] Frontend button
 - [ ] Missing directory structure for TV series
   - RenameService currently dumps all files flat in OutputPath
   - TV series need folder structure: SeriesName/Season 01/EpisodeFile.mkv
