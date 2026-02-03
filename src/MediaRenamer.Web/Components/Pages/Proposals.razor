@@ -39,18 +39,12 @@
     {
       <tr class="hover:bg-white/5 transition-all group">
         <!-- Datei: FULL Name, Icon -->
-        @* TODO: force line break *@
-        <td class="px-6 py-5">
-          <div class="flex items-center space-x-3">
-            <div class="min-w-0 flex-1">
-              <div class="font-mono text-slate-300 text-sm leading-tight">@Path.GetFileName(p.Source.OriginalPath)</div>
-              <div class="text-xs text-slate-500 mt-0.5">@{ Path.GetDirectoryName(p.Source.OriginalPath); }</div>
-            </div>
-          </div>
+        <td class="px-6 py-5 break-all max-w-xs">
+              <div class="font-mono text-slate-200 text-sm break-all">@Path.GetFileName(p.Source.OriginalPath)</div>
         </td>
 
         <!-- Vorschlag: FULL Text, bold -->
-        <td class="px-6 py-5 text-emerald-300 text-lg leading-tight">
+        <td class="px-6 py-5 text-emerald-300 text-sm leading-tight">
           @p.ProposedName
         </td>
 
