@@ -1,10 +1,11 @@
 using MediaRenamer.Api.Data;
+using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaRenamer.Api.Services;
 
-public class ProposalStore(ProposalDbContext dbContext)
+public class ProposalStore(ProposalDbContext dbContext) : IProposalStore
 {
     public async Task Add(RenameProposal proposal)
     {

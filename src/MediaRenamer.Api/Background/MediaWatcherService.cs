@@ -4,6 +4,7 @@ using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace MediaRenamer.Api.Background;
 
@@ -12,31 +13,29 @@ public class MediaWatcherService(
     IMediaScanner scanner,
     MetadataResolver resolver,
     IRenameService renamer,
-    IConfiguration config,
+    IOptions<MediaSettings> mediaSettings,
     IServiceScopeFactory scopeFactory)
     : BackgroundService
 {
-    private readonly string _watchPath = config["Media:WatchPath"] ?? "/media/incoming";
-    private readonly TimeSpan _scanInterval = TimeSpan.FromSeconds(config.GetValue<int>("Media:ScanInterval"));
+    private readonly MediaSettings _mediaSettings = mediaSettings.Value;
+    private TimeSpan ScanInterval => TimeSpan.FromSeconds(_mediaSettings.ScanInterval);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (logger.IsEnabled(LogLevel.Information))
-            logger.LogInformation("MediaWatcherService started. Watching: {path}", _watchPath);
+            logger.LogInformation("MediaWatcherService started. Watching: {path}", _mediaSettings.WatchPath);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 using var scope = scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<ProposalDbContext>();
-                await db.Database.MigrateAsync(stoppingToken);
 
-                var proposalStore = scope.ServiceProvider.GetRequiredService<ProposalStore>();
+                var proposalStore = scope.ServiceProvider.GetRequiredService<IProposalStore>();
 
                 // Scan for media files
                 var files = Directory
-                    .GetFiles(_watchPath, "*.*", SearchOption.AllDirectories)
+                    .GetFiles(_mediaSettings.WatchPath, "*.*", SearchOption.AllDirectories)
                     .Where(f => f.EndsWith(".mkv") || f.EndsWith(".mp4"));
 
                 var pendingFiles = await proposalStore.GetPending();
@@ -84,7 +83,7 @@ public class MediaWatcherService(
             }
 
             // Wait before next scan
-            await Task.Delay(_scanInterval, stoppingToken);
+            await Task.Delay(ScanInterval, stoppingToken);
         }
     }
 }

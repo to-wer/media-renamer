@@ -56,7 +56,7 @@ try
                      ?? "/app/db/proposals.db";
         options.UseSqlite($"Data Source={dbPath}");
     });
-    builder.Services.AddScoped<ProposalStore>();
+    builder.Services.AddScoped<IProposalStore, ProposalStore>();
     builder.Services.AddSingleton<MetadataResolver>();
     builder.Services.AddSingleton<IRenameService, RenameService>();
 
@@ -66,6 +66,14 @@ try
 
     var app = builder.Build();
 
+    app.Lifetime.ApplicationStarted.Register(async () =>
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ProposalDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        await db.EnsureMigratedAsync(logger);
+    });
+    
 // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
