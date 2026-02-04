@@ -1,5 +1,10 @@
 # TODO
 
+## Bugs
+- [ ] What happens if the file is removed after the proposal is created but before approval? (FileNotFoundException on move)
+  - [ ] Delete pending proposal if file not found during approval or during scan
+- [ ] Fix "wrong" template for TV series (currently "Season S01E01 EpisodeName", should be "Season - S01E01 - EpisodeName")
+
 ## 🚨 Priority 1: Critical Bugs (Fix immediately)
 
 - [X] **RenameService**: Add error handling for existing target files (File.Move throws exception on conflict)

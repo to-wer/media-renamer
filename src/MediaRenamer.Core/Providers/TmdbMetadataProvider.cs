@@ -89,7 +89,7 @@ public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataPro
 
         file.Title = show.Name;
         file.Year = show.FirstAirDate?.Year;
-        file.EpisodeTitle = episode.Name;
+        file.EpisodeTitle = episode?.Name;
 
         return file;
     }
