@@ -1,9 +1,9 @@
 # TODO
 
 ## Bugs
-- [ ] What happens if the file is removed after the proposal is created but before approval? (FileNotFoundException on move)
-  - [ ] Delete pending proposal if file not found during approval or during scan
-- [ ] Fix "wrong" template for TV series (currently "Season S01E01 EpisodeName", should be "Season - S01E01 - EpisodeName")
+- [X] What happens if the file is removed after the proposal is created but before approval? (FileNotFoundException on move)
+  - [X] Delete pending proposal if file not found during approval or during scan
+- [X] Fix "wrong" template for TV series (currently "Season S01E01 EpisodeName", should be "Season - S01E01 - EpisodeName")
 - [ ] Handle System.IO.IOException: Target file already exists
 
 ## 🚨 Priority 1: Critical Bugs (Fix immediately)
