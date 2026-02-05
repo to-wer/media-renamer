@@ -46,9 +46,25 @@ public class RenameService(
                     logger.LogInformation("Created directory: {Directory}", targetDir);
             }
 
+            // Handle duplicate files based on the configured strategy
             if (File.Exists(targetPath))
             {
-                throw new IOException($"Target file already exists: {targetPath}");
+                switch (_settings.DuplicateFileHandling)
+                {
+                    case Models.DuplicateFileHandling.Skip:
+                        logger.LogWarning("Skipping rename: Target file already exists: {TargetPath}", targetPath);
+                        return Task.CompletedTask;
+
+                    case Models.DuplicateFileHandling.Overwrite:
+                        logger.LogInformation("Overwriting existing file: {TargetPath}", targetPath);
+                        File.Delete(targetPath);
+                        break;
+
+                    case Models.DuplicateFileHandling.RenameWithSuffix:
+                        targetPath = GetUniqueFilePath(targetPath);
+                        logger.LogInformation("Using alternative filename to avoid conflict: {TargetPath}", targetPath);
+                        break;
+                }
             }
 
             File.Move(proposal.Source.OriginalPath, targetPath);
@@ -62,5 +78,21 @@ public class RenameService(
             logger.LogError(ex, "An error occured while renaming the file");
             throw new InvalidOperationException($"Failed to rename {proposal.Source.OriginalPath}", ex);
         }
+    }
+
+    private static string GetUniqueFilePath(string filePath)
+    {
+        var directory = Path.GetDirectoryName(filePath) ?? string.Empty;
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+        var extension = Path.GetExtension(filePath);
+        var counter = 1;
+
+        while (File.Exists(filePath))
+        {
+            filePath = Path.Combine(directory, $"{fileNameWithoutExtension}_{counter}{extension}");
+            counter++;
+        }
+
+        return filePath;
     }
 }

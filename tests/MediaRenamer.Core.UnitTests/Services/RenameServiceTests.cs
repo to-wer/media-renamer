@@ -84,7 +84,7 @@ public class RenameServiceTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ShouldThrowException_WhenTargetFileAlreadyExists()
+    public async Task ExecuteAsync_ShouldSkipFile_WhenTargetFileAlreadyExists_AndSkipStrategy()
     {
         // Arrange
         var sourceFileName = "SourceFile.mkv";
@@ -109,14 +109,108 @@ public class RenameServiceTests
             ScanTime = DateTime.UtcNow
         };
 
-        // Act & Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(async () =>
-        {
-            await _renameService.ExecuteAsync(renameProposal);
-        });
+        // Act
+        await _renameService.ExecuteAsync(renameProposal);
 
-        exception.ShouldNotBeNull();
-        exception.Message.ShouldStartWith("Failed to rename");
+        // Assert
+        File.Exists(sourceFilePath).ShouldBeTrue("Source file should still exist (not moved)");
+        File.Exists(targetFilePath).ShouldBeTrue("Target file should still exist");
+        var existingContent = await File.ReadAllTextAsync(targetFilePath);
+        existingContent.ShouldBe("existing content", "Target file should not be modified");
+    }
+
+    [Test]
+    public async Task ExecuteAsync_ShouldOverwriteFile_WhenTargetFileAlreadyExists_AndOverwriteStrategy()
+    {
+        // Arrange
+        var sourceFileName = "SourceFile.mkv";
+        var targetFileName = "ExistingFileName";
+
+        var sourceFilePath = Path.Combine(_inputDirectory, sourceFileName);
+        var targetFilePath = Path.Combine(_outputDirectory, targetFileName + ".mkv");
+
+        await File.WriteAllTextAsync(sourceFilePath, "source content");
+        await File.WriteAllTextAsync(targetFilePath, "existing content");
+
+        var renameProposal = new RenameProposal
+        {
+            Id = Guid.NewGuid(),
+            ProposedName = targetFileName,
+            Source = new MediaFile
+            {
+                OriginalPath = sourceFilePath,
+                FileName = sourceFileName
+            },
+            Status = ProposalStatus.Pending,
+            ScanTime = DateTime.UtcNow
+        };
+
+        // Update settings to use Overwrite strategy
+        var mediaSettings = new MediaSettings
+        {
+            WatchPath = _inputDirectory,
+            OutputPath = _outputDirectory,
+            DuplicateFileHandling = DuplicateFileHandling.Overwrite
+        };
+        _settings.Value.Returns(mediaSettings);
+        _renameService = new RenameService(_settings, _logger);
+
+        // Act
+        await _renameService.ExecuteAsync(renameProposal);
+
+        // Assert
+        File.Exists(sourceFilePath).ShouldBeFalse("Source file should be moved");
+        File.Exists(targetFilePath).ShouldBeTrue("Target file should exist");
+        var overwrittenContent = await File.ReadAllTextAsync(targetFilePath);
+        overwrittenContent.ShouldBe("source content", "Target file should be overwritten");
+    }
+
+    [Test]
+    public async Task ExecuteAsync_ShouldRenameWithSuffix_WhenTargetFileAlreadyExists_AndRenameWithSuffixStrategy()
+    {
+        // Arrange
+        var sourceFileName = "SourceFile.mkv";
+        var targetFileName = "ExistingFileName";
+
+        var sourceFilePath = Path.Combine(_inputDirectory, sourceFileName);
+        var targetFilePath = Path.Combine(_outputDirectory, targetFileName + ".mkv");
+        var expectedTargetPath = Path.Combine(_outputDirectory, targetFileName + "_1.mkv");
+
+        await File.WriteAllTextAsync(sourceFilePath, "source content");
+        await File.WriteAllTextAsync(targetFilePath, "existing content");
+
+        var renameProposal = new RenameProposal
+        {
+            Id = Guid.NewGuid(),
+            ProposedName = targetFileName,
+            Source = new MediaFile
+            {
+                OriginalPath = sourceFilePath,
+                FileName = sourceFileName
+            },
+            Status = ProposalStatus.Pending,
+            ScanTime = DateTime.UtcNow
+        };
+
+        // Update settings to use RenameWithSuffix strategy
+        var mediaSettings = new MediaSettings
+        {
+            WatchPath = _inputDirectory,
+            OutputPath = _outputDirectory,
+            DuplicateFileHandling = DuplicateFileHandling.RenameWithSuffix
+        };
+        _settings.Value.Returns(mediaSettings);
+        _renameService = new RenameService(_settings, _logger);
+
+        // Act
+        await _renameService.ExecuteAsync(renameProposal);
+
+        // Assert
+        File.Exists(sourceFilePath).ShouldBeFalse("Source file should be moved");
+        File.Exists(targetFilePath).ShouldBeTrue("Original target file should still exist");
+        File.Exists(expectedTargetPath).ShouldBeTrue("New file with suffix should exist");
+        var movedContent = await File.ReadAllTextAsync(expectedTargetPath);
+        movedContent.ShouldBe("source content", "File should be moved with suffix");
     }
 
     [Test]
