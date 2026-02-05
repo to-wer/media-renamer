@@ -43,7 +43,11 @@ public class MediaWatcherService(
                 foreach (var file in files)
                 {
                     if (pendingFiles.Any(p => p.Source.OriginalPath == file))
+                    {
+                        if (logger.IsEnabled(LogLevel.Debug))
+                            logger.LogDebug("File already has a pending proposal, skipping: {file}", file);
                         continue;
+                    }
 
                     // TODO: skip rejected files with same proposed name
 
