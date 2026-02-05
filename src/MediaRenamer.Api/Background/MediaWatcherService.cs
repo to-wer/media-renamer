@@ -40,6 +40,21 @@ public class MediaWatcherService(
 
                 var pendingFiles = await proposalStore.GetPending();
 
+                // Check if pending proposals still have their source files
+                foreach (var pendingProposal in pendingFiles)
+                {
+                    if (File.Exists(pendingProposal.Source.OriginalPath)) continue;
+                    if (logger.IsEnabled(LogLevel.Warning))
+                    {
+                        logger.LogWarning("File not found during scan, deleting proposal: {filePath}",
+                            pendingProposal.Source.OriginalPath);
+                    }
+                    await proposalStore.Delete(pendingProposal.Id);
+                }
+
+                // Refresh pending files after cleanup
+                pendingFiles = await proposalStore.GetPending();
+
                 foreach (var file in files)
                 {
                     if (pendingFiles.Any(p => p.Source.OriginalPath == file))

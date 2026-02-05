@@ -1,7 +1,5 @@
-using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
-using MediaRenamer.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MediaRenamer.Api.Controllers;
@@ -9,8 +7,6 @@ namespace MediaRenamer.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class MediaController(
-    IMediaScanner scanner,
-    MetadataResolver resolver,
     IRenameService renamer,
     IProposalStore proposalStore,
     ILogger<MediaController> logger) : ControllerBase
@@ -30,6 +26,18 @@ public class MediaController(
         var proposal = await proposalStore.GetById(id);
         if (proposal == null)
             return NotFound();
+
+        // Check if the source file still exists
+        if (!System.IO.File.Exists(proposal.Source.OriginalPath))
+        {
+            if (logger.IsEnabled(LogLevel.Warning))
+            {
+                logger.LogWarning("File not found during approval, deleting proposal: {filePath}", 
+                    proposal.Source.OriginalPath);
+            }
+            await proposalStore.Delete(id);
+            return NotFound("Source file no longer exists");
+        }
 
         try
         {

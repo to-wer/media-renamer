@@ -64,6 +64,16 @@ public class ProposalStore(ProposalDbContext dbContext) : IProposalStore
         }
     }
 
+    public async Task Delete(Guid id)
+    {
+        var prop = await GetById(id);
+        if (prop != null)
+        {
+            dbContext.Proposals.Remove(prop);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+
     public async Task Clear()
     {
         dbContext.Proposals.RemoveRange(await dbContext.Proposals.ToListAsync());

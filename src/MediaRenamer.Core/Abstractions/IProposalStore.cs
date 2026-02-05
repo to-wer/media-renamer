@@ -9,6 +9,7 @@ public interface IProposalStore
     Task<RenameProposal?> GetById(Guid id);
     Task Approve(Guid id);
     Task Reject(Guid id);
+    Task Delete(Guid id);
     Task Clear();
     Task<ProposalStats> GetStats();
     Task<List<RenameProposal>> GetPending();
