@@ -74,6 +74,23 @@ public class ProposalStore(ProposalDbContext dbContext) : IProposalStore
         }
     }
 
+    public async Task DeleteMany(IEnumerable<Guid> ids)
+    {
+        var idList = ids.ToList();
+        if (idList.Count == 0)
+            return;
+
+        var proposals = await dbContext.Proposals
+            .Where(p => idList.Contains(p.Id))
+            .ToListAsync();
+
+        if (proposals.Count > 0)
+        {
+            dbContext.Proposals.RemoveRange(proposals);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+
     public async Task Clear()
     {
         dbContext.Proposals.RemoveRange(await dbContext.Proposals.ToListAsync());

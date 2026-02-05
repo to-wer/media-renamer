@@ -10,6 +10,7 @@ public interface IProposalStore
     Task Approve(Guid id);
     Task Reject(Guid id);
     Task Delete(Guid id);
+    Task DeleteMany(IEnumerable<Guid> ids);
     Task Clear();
     Task<ProposalStats> GetStats();
     Task<List<RenameProposal>> GetPending();

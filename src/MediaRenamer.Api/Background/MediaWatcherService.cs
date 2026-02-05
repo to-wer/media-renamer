@@ -41,6 +41,7 @@ public class MediaWatcherService(
                 var pendingFiles = await proposalStore.GetPending();
 
                 // Check if pending proposals still have their source files
+                var idsToDelete = new List<Guid>();
                 foreach (var pendingProposal in pendingFiles)
                 {
                     if (File.Exists(pendingProposal.Source.OriginalPath)) continue;
@@ -49,10 +50,18 @@ public class MediaWatcherService(
                         logger.LogWarning("File not found during scan, deleting proposal: {filePath}",
                             pendingProposal.Source.OriginalPath);
                     }
-                    await proposalStore.Delete(pendingProposal.Id);
+                    idsToDelete.Add(pendingProposal.Id);
                 }
 
-                // Refresh pending files after cleanup
+                // Batch delete proposals for missing files (more efficient than individual deletes)
+                if (idsToDelete.Count > 0)
+                {
+                    await proposalStore.DeleteMany(idsToDelete);
+                }
+
+                // Refresh pending files after cleanup to ensure we have the current state
+                // This is necessary because we just deleted some proposals and need to avoid
+                // creating duplicate proposals for files that were already processed
                 pendingFiles = await proposalStore.GetPending();
 
                 foreach (var file in files)
