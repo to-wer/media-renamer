@@ -47,7 +47,7 @@ public class RenameServiceTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ShouldMoveFile_WhenTargetFileDoesNotExist()
+    public async Task Execute_ShouldMoveFile_WhenTargetFileDoesNotExist()
     {
         // Arrange
         var sourceFileName = "SourceFile.mkv";
@@ -73,9 +73,10 @@ public class RenameServiceTests
         };
 
         // Act
-        await _renameService.ExecuteAsync(renameProposal);
+        var proposalStatus = _renameService.Execute(renameProposal);
 
         // Assert
+        proposalStatus.ShouldBe(ProposalStatus.Processed);
         File.Exists(sourceFilePath).ShouldBeFalse("Source file should be moved");
         File.Exists(targetFilePath).ShouldBeTrue("Target file should exist");
 
@@ -84,7 +85,7 @@ public class RenameServiceTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ShouldSkipFile_WhenTargetFileAlreadyExists_AndSkipStrategy()
+    public async Task Execute_ShouldSkipFile_WhenTargetFileAlreadyExists_AndSkipStrategy()
     {
         // Arrange
         var sourceFileName = "SourceFile.mkv";
@@ -110,9 +111,10 @@ public class RenameServiceTests
         };
 
         // Act
-        await _renameService.ExecuteAsync(renameProposal);
+        var proposalStatus = _renameService.Execute(renameProposal);
 
         // Assert
+        proposalStatus.ShouldBe(ProposalStatus.Skipped);
         File.Exists(sourceFilePath).ShouldBeTrue("Source file should still exist (not moved)");
         File.Exists(targetFilePath).ShouldBeTrue("Target file should still exist");
         var existingContent = await File.ReadAllTextAsync(targetFilePath);
@@ -120,7 +122,7 @@ public class RenameServiceTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ShouldOverwriteFile_WhenTargetFileAlreadyExists_AndOverwriteStrategy()
+    public async Task Execute_ShouldOverwriteFile_WhenTargetFileAlreadyExists_AndOverwriteStrategy()
     {
         // Arrange
         var sourceFileName = "SourceFile.mkv";
@@ -156,9 +158,10 @@ public class RenameServiceTests
         _renameService = new RenameService(_settings, _logger);
 
         // Act
-        await _renameService.ExecuteAsync(renameProposal);
+        var proposalStatus = _renameService.Execute(renameProposal);
 
         // Assert
+        proposalStatus.ShouldBe(ProposalStatus.Processed);
         File.Exists(sourceFilePath).ShouldBeFalse("Source file should be moved");
         File.Exists(targetFilePath).ShouldBeTrue("Target file should exist");
         var overwrittenContent = await File.ReadAllTextAsync(targetFilePath);
@@ -166,7 +169,7 @@ public class RenameServiceTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ShouldRenameWithSuffix_WhenTargetFileAlreadyExists_AndRenameWithSuffixStrategy()
+    public async Task Execute_ShouldRenameWithSuffix_WhenTargetFileAlreadyExists_AndRenameWithSuffixStrategy()
     {
         // Arrange
         var sourceFileName = "SourceFile.mkv";
@@ -203,9 +206,10 @@ public class RenameServiceTests
         _renameService = new RenameService(_settings, _logger);
 
         // Act
-        await _renameService.ExecuteAsync(renameProposal);
+        var proposalStatus = _renameService.Execute(renameProposal);
 
         // Assert
+        proposalStatus.ShouldBe(ProposalStatus.Processed);
         File.Exists(sourceFilePath).ShouldBeFalse("Source file should be moved");
         File.Exists(targetFilePath).ShouldBeTrue("Original target file should still exist");
         File.Exists(expectedTargetPath).ShouldBeTrue("New file with suffix should exist");
@@ -214,7 +218,7 @@ public class RenameServiceTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ShouldHandleSubdirectories_WhenProposedNameContainsPath()
+    public async Task Execute_ShouldHandleSubdirectories_WhenProposedNameContainsPath()
     {
         // Arrange
         var sourceFileName = "SeriesName.S01E01.mkv";
@@ -239,9 +243,10 @@ public class RenameServiceTests
         };
 
         // Act
-        await _renameService.ExecuteAsync(renameProposal);
+        var proposalStatus = _renameService.Execute(renameProposal);
 
         // Assert
+        proposalStatus.ShouldBe(ProposalStatus.Processed);
         File.Exists(targetFilePath).ShouldBeTrue("Target file should exist in subdirectory");
         Directory.Exists(Path.GetDirectoryName(targetFilePath)).ShouldBeTrue("Subdirectory should be created");
     }

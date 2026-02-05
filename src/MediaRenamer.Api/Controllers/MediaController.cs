@@ -32,17 +32,19 @@ public class MediaController(
         {
             if (logger.IsEnabled(LogLevel.Warning))
             {
-                logger.LogWarning("File not found during approval, deleting proposal: {filePath}", 
+                logger.LogWarning("File not found during approval, deleting proposal: {filePath}",
                     proposal.Source.OriginalPath);
             }
+
             await proposalStore.Delete(id);
             return NotFound("Source file no longer exists");
         }
 
         try
         {
-            await renamer.ExecuteAsync(proposal);
             await proposalStore.Approve(proposal.Id);
+            var proposalStatus = renamer.Execute(proposal);
+            await proposalStore.SetStatus(id, proposalStatus);
         }
         catch (Exception ex)
         {

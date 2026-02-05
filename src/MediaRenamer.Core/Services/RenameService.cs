@@ -27,7 +27,7 @@ public class RenameService(
         };
     }
 
-    public Task ExecuteAsync(RenameProposal proposal)
+    public ProposalStatus Execute(RenameProposal proposal)
     {
         try
         {
@@ -53,7 +53,7 @@ public class RenameService(
                 {
                     case Models.DuplicateFileHandling.Skip:
                         logger.LogWarning("Skipping rename: Target file already exists: {TargetPath}", targetPath);
-                        return Task.CompletedTask;
+                        return ProposalStatus.Skipped;
 
                     case Models.DuplicateFileHandling.Overwrite:
                         logger.LogInformation("Overwriting existing file: {TargetPath}", targetPath);
@@ -71,7 +71,7 @@ public class RenameService(
             if (logger.IsEnabled(LogLevel.Information))
                 logger.LogInformation("Renamed: {Source} → {Target}",
                     proposal.Source.OriginalPath, targetPath);
-            return Task.CompletedTask;
+            return ProposalStatus.Processed;
         }
         catch (Exception ex)
         {

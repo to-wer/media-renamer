@@ -5,5 +5,5 @@ namespace MediaRenamer.Core.Abstractions;
 public interface IRenameService
 {
     RenameProposal CreateProposal(MediaFile file);
-    Task ExecuteAsync(RenameProposal proposal);
+    ProposalStatus Execute(RenameProposal proposal);
 }
