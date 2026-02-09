@@ -6,38 +6,65 @@ using Microsoft.Extensions.Logging;
 
 namespace MediaRenamer.Core.Services;
 
-public class FilenameParserService(ILogger<FilenameParserService> logger) : IFilenameParserService
+/// <summary>
+/// Service for parsing media filenames using configurable patterns.
+/// </summary>
+public class FilenameParserService : IFilenameParserService
 {
-    private static readonly List<string> NoisePatterns =
-    [
-        @"1080[p|i]", @"2160[p|i]", @"4k", @"720[p|i]", @"480[p|i]",
-        @"x264", @"x265", @"h264", @"h265", @"hevc", @"avc", @"av1",
-        @"ac3", @"eac3", @"dd5\.1", @"dd7\.1", @"dts", @"truehd",
+    private readonly ILogger<FilenameParserService> _logger;
+    private readonly ParserConfiguration _configuration;
+    private readonly Lazy<Regex> _yearRegex;
+    private readonly Lazy<Regex> _episodeRegex;
 
-        // Sprachen
-        @"german", @"deutsch", @"german\.dubbed", @"dl\.german",
-        @"english", @"eng", @"multi", @"forced",
+    /// <summary>
+    /// Creates a new instance of FilenameParserService with default configuration.
+    /// </summary>
+    public FilenameParserService(ILogger<FilenameParserService> logger) : this(logger, ParserConfiguration.GetDefaultConfiguration())
+    {
+    }
 
-        // Releases/Gruppen
-        @"rarbg", @"yts", @"torrentgalaxy", @"blu", @"dvdrip", @"bdrip",
-        @"web[-.]?(dl|rip)", @"proper", @"repack",
+    /// <summary>
+    /// Creates a new instance of FilenameParserService with custom configuration.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="configuration">The parser configuration to use.</param>
+    public FilenameParserService(ILogger<FilenameParserService> logger, ParserConfiguration configuration)
+    {
+        _logger = logger;
+        _configuration = configuration;
+        
+        // Pre-compile commonly used regexes for better performance
+        _yearRegex = new Lazy<Regex>(() => new Regex(@"\b(19|20)\d{2}\b", RegexOptions.Compiled));
+        _episodeRegex = new Lazy<Regex>(() => new Regex(@"s\d+e\d+|staffel\s*\d+|season\s*\d+|folge\s*\d+|episode\s*\d+", RegexOptions.Compiled | RegexOptions.IgnoreCase));
+    }
 
-        // Dateigröße
-        @"\d+\.?\d*\.?(gb|mb|kb)"
-    ];
-
-    private static readonly Regex YearRegex = new(@"\b(19|20)\d{2}\b", RegexOptions.Compiled);
+    /// <summary>
+    /// Gets the current parser configuration.
+    /// </summary>
+    public ParserConfiguration Configuration => _configuration;
 
     public ParsedMediaTitle Parse(string filename)
     {
+        if (string.IsNullOrWhiteSpace(filename))
+        {
+            return new ParsedMediaTitle(
+                RawFilename: filename,
+                NormalizedTitle: string.Empty,
+                Year: null,
+                Type: MediaType.Movie,
+                Confidence: 0,
+                RemovedNoise: new List<string>()
+            );
+        }
+
         var normalized = filename.NormalizeForParsing();
         var (title, year) = ExtractTitleAndYear(normalized);
         var noise = ExtractNoise(filename, normalized);
 
         var confidence = CalculateConfidence(title.Length, year.HasValue, noise.Count);
 
-        if (logger.IsEnabled(LogLevel.Information))
-            logger.LogInformation(
+        if (_logger.IsEnabled(LogLevel.Information))
+            _logger.LogInformation(
                 "Parsed filename '{Filename}' to title '{Title}' (Year: {Year}, Confidence: {Confidence:P2})",
                 filename, title, year.HasValue ? year.ToString() : "N/A", confidence);
 
@@ -45,7 +72,7 @@ public class FilenameParserService(ILogger<FilenameParserService> logger) : IFil
             RawFilename: filename,
             NormalizedTitle: title,
             Year: year,
-            Type: DetectMediaType(title),
+            Type: DetectMediaType(title, filename),
             Confidence: confidence,
             RemovedNoise: noise
         );
@@ -53,14 +80,22 @@ public class FilenameParserService(ILogger<FilenameParserService> logger) : IFil
 
     private (string title, int? year) ExtractTitleAndYear(string normalized)
     {
+        // Remove leading numbering (e.g., "01.", "1. ")
         normalized = Regex.Replace(normalized, @"^\s*\d+\.?\s*", "");
 
-        foreach (var pattern in NoisePatterns)
+        // Get patterns that should be removed from title, sorted by priority
+        var removablePatterns = _configuration.Patterns
+            .Where(p => p.IsEnabled && p.RemoveFromTitle)
+            .OrderBy(p => p.Priority)
+            .ToList();
+
+        foreach (var pattern in removablePatterns)
         {
-            normalized = Regex.Replace(normalized, $@"\b{pattern}\b.*?$", "", RegexOptions.IgnoreCase);
+            normalized = ApplyPatternReplacement(normalized, pattern);
         }
 
-        var yearMatch = YearRegex.Match(normalized);
+        // Extract year
+        var yearMatch = _yearRegex.Value.Match(normalized);
         if (yearMatch.Success && int.TryParse(yearMatch.Value, out var year) && year >= 1900 && year <= 2099)
         {
             var titleEndIndex = yearMatch.Index;
@@ -71,21 +106,50 @@ public class FilenameParserService(ILogger<FilenameParserService> logger) : IFil
         return (normalized.Trim(), null);
     }
 
-    private static List<string> ExtractNoise(string original, string normalized)
+    private string ApplyPatternReplacement(string input, ParserPattern pattern)
+    {
+        try
+        {
+            var options = RegexOptions.IgnoreCase | RegexOptions.Compiled;
+            return Regex.Replace(input, $@"\b{pattern.Pattern}\b.*?$", "", options);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid regex pattern '{Pattern}' for pattern '{Id}'", pattern.Pattern, pattern.Id);
+            return input;
+        }
+    }
+
+    private List<string> ExtractNoise(string original, string normalized)
     {
         var noise = new List<string>();
-        foreach (var pattern in NoisePatterns)
+        var processedPatterns = new HashSet<string>();
+
+        foreach (var pattern in _configuration.Patterns.Where(p => p.IsEnabled))
         {
-            var match = Regex.Match(original, pattern, RegexOptions.IgnoreCase);
-            if (match.Success) noise.Add(match.Value);
+            try
+            {
+                var options = pattern.CaseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None;
+                var match = Regex.Match(original, pattern.Pattern, options);
+                
+                if (match.Success && !processedPatterns.Contains(match.Value))
+                {
+                    noise.Add(match.Value);
+                    processedPatterns.Add(match.Value);
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid regex pattern '{Pattern}' for pattern '{Id}'", pattern.Pattern, pattern.Id);
+            }
         }
 
-        return noise.Distinct().ToList();
+        return noise.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     private static double CalculateConfidence(int titleLength, bool hasYear, int noiseCount)
     {
-        var score = 0.5; // Basis
+        var score = 0.5; // Base score
 
         if (hasYear) score += 0.3;
         if (titleLength > 5 && titleLength < 100) score += 0.2;
@@ -94,11 +158,21 @@ public class FilenameParserService(ILogger<FilenameParserService> logger) : IFil
         return Math.Max(0, Math.Min(1, score));
     }
 
-    private static MediaType DetectMediaType(string title)
+    private MediaType DetectMediaType(string title, string originalFilename)
     {
+        // Check for episode patterns in the original filename (preserves case)
+        if (_episodeRegex.Value.IsMatch(originalFilename))
+        {
+            return MediaType.Episode;
+        }
+
+        // Also check normalized title
         var lower = title.ToLower();
-        if (Regex.IsMatch(lower, @"s\d+e\d+|staffel|season|episode")) return MediaType.Episode;
-        // if (Regex.IsMatch(lower, @"staffel|season")) return MediaType.Episode;
+        if (Regex.IsMatch(lower, @"s\d+e\d+|staffel|season|episode|folge"))
+        {
+            return MediaType.Episode;
+        }
+
         return MediaType.Movie;
     }
 }
