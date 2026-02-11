@@ -8,10 +8,10 @@
 
 ## 🚨 Priority 1: Critical Bugs (Fix immediately)
 
-- [X] **RenameService**: Add error handling for existing target files (File.Move throws exception on conflict)
-- [X] **MediaWatcherService**: Add null-check for enriched MediaFile (crash when TMDB finds no metadata)
-- [X] **API-Key Validation**: Validate TMDB API key at startup instead of runtime NullReferenceException
-- [X] **MediaController.Scan**: Implement path validation (check if within WatchPath) - Deleted controller action
+- [X] **RenameService**: Add error handling for existing target files (File.Move throws exception on conflict) - **DONE**
+- [X] **MediaWatcherService**: Add null-check for enriched MediaFile (crash when TMDB finds no metadata) - **DONE**
+- [X] **API-Key Validation**: Validate TMDB API key at startup instead of runtime NullReferenceException - **DONE**
+- [X] **MediaController.Scan**: Implement path validation (check if within WatchPath) - **DONE**
 
 ### 🔒 Security - Priority 1
 
@@ -26,7 +26,7 @@
 - [ ] Implement logging and error handling
 - [ ] Implement clear list
   - [X] API endpoint
-  - [ ] Frontend button
+  - [ ] Frontend button - **STILL MISSING**
 - [ ] Missing directory structure for TV series
   - RenameService currently dumps all files flat in OutputPath
   - TV series need folder structure: SeriesName/Season 01/EpisodeFile.mkv
@@ -41,10 +41,10 @@
 
 ## ⚡ Priority 3: Performance Optimizations
 
-- [ ] **MediaWatcherService**: Remove `_processedFiles` ConcurrentDictionary (redundant, DB is single source of truth)
+- [X] **MediaWatcherService**: Remove `_processedFiles` ConcurrentDictionary (redundant, DB is single source of truth) - **DONE**
 - [ ] **MediaWatcherService**: Optimize proposal query (currently loads all proposals on every scan)
 - [ ] **Regex-Pattern**: Use `[GeneratedRegex]` or static Regex fields with `RegexOptions.Compiled` in MediaScanner and TmdbMetadataProvider
-- [ ] **ProposalController.GetStats**: Inefficient - calls `GetAll()` three times, should use dedicated stats query
+- [X] **ProposalStore.GetStats**: Inefficient - calls `GetAll()` three times - **FIXED** - now uses efficient CountAsync queries
 
 ### 🔧 Performance - Priority 3
 
@@ -57,10 +57,6 @@
 
 - [ ] **ProposalController.GetProposals**: Whitelist pattern for sortBy parameter (SQL injection prevention)
 - [ ] **MediaController.Approve**: Log statement should always execute (not behind IsEnabled check)
-- [ ] **MediaScanner**: Startup check if ffprobe is installed
-- [ ] **MediaScanner**: Configurable timeouts for large files
-- [ ] **MediaScanner**: Better error handling instead of empty string on ffprobe failure
-- [ ] **TmdbMetadataProvider**: Retry logic for transient API errors (e.g. with Polly)
 - [ ] **Docker**: Add healthchecks for API and Web containers
 - [ ] Integration tests for API endpoints
 - [ ] Tests for race conditions in MediaWatcherService
@@ -88,6 +84,12 @@
 - ~~Complete docker-compose~~ DONE
 - ~~Set up CI/CD pipeline~~ DONE
 - ~~Implement clear list - API endpoint~~ DONE
+- ~~RenameService: Add error handling for existing target files~~ DONE
+- ~~MediaWatcherService: Add null-check for enriched MediaFile~~ DONE
+- ~~API-Key Validation: Validate TMDB API key at startup~~ DONE
+- ~~MediaController.Scan: Implement path validation~~ DONE
+- ~~MediaWatcherService: Remove `_processedFiles` ConcurrentDictionary~~ DONE
+- ~~ProposalStore.GetStats: Fixed inefficient query - now uses CountAsync~~ DONE
 
 ---
 
