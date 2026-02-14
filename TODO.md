@@ -1,5 +1,8 @@
 # TODO
 
+## Features
+- Organize musicy
+
 ## Bugs
 - [X] What happens if the file is removed after the proposal is created but before approval? (FileNotFoundException on move)
   - [X] Delete pending proposal if file not found during approval or during scan

@@ -1,0 +1,132 @@
+@using MediaRenamer.Core.Models
+
+<div class="glass-card overflow-x-auto rounded-2xl shadow-2xl">
+  <table class="min-w-[800px] w-full divide-y divide-white/10">
+    <thead class="bg-white/5 backdrop-blur-sm sticky top-0 z-10">
+    <tr>
+      <th class="px-6 py-4 text-left font-bold text-slate-200 text-sm uppercase tracking-wider">
+        📁 Datei
+      </th>
+      <th class="px-6 py-4 text-left font-bold text-slate-200 text-sm uppercase tracking-wider">
+        ✨ Vorschlag
+      </th>
+      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider hidden md:table-cell">
+        🎬 Typ
+      </th>
+      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider hidden lg:table-cell">
+        📅 Jahr
+      </th>
+      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider">
+        🔔 Status
+      </th>
+      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider">
+        ⚡ Aktion
+      </th>
+    </tr>
+    </thead>
+    <tbody class="divide-y divide-white/5 bg-white/2 backdrop-blur-sm">
+    @foreach (var p in Proposals)
+    {
+      <tr class="hover:bg-white/5 transition-all group">
+        <!-- Datei: FULL Name, Icon -->
+        <td class="px-6 py-5 break-all max-w-xs">
+              <div class="font-mono text-slate-200 text-sm break-all">@Path.GetFileName(p.Source.OriginalPath)</div>
+        </td>
+
+        <!-- Vorschlag: FULL Text, bold -->
+        <td class="px-6 py-5 text-emerald-300 text-sm leading-tight">
+          @p.ProposedName
+        </td>
+
+        <!-- Typ: Icon + Badge -->
+        <td class="px-6 py-5 text-center hidden md:table-cell">
+            <span
+              class="inline-flex px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-sm font-bold text-slate-200 shadow-md">
+              @(p.Source.Type == MediaType.Movie ? "🎬 Film" : "📺 Serie")
+            </span>
+        </td>
+
+        <!-- Jahr: centered -->
+        <td class="px-6 py-5 text-center hidden lg:table-cell text-lg font-bold text-slate-200">
+          @p.Source.Year
+        </td>
+
+        <!-- Status: fixed, no wrap -->
+        <td class="px-6 py-5 text-center whitespace-nowrap">
+          @if (p.Status == ProposalStatus.Pending)
+          {
+            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 
+                           text-yellow-300 border-2 border-yellow-500/40 rounded-xl text-sm font-bold 
+                           shadow-lg animate-pulse">
+                ⏳ Warten auf Approval
+              </span>
+          }
+          else if (p.Status == ProposalStatus.Approved || p.Status == ProposalStatus.Processed)
+          {
+            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 
+                           text-emerald-300 border-2 border-emerald-500/40 rounded-xl text-sm font-bold 
+                           shadow-lg">
+                ✅ Umbenannt
+              </span>
+          }
+          else if (p.Status == ProposalStatus.Rejected)
+          {
+            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-rose-500/20 to-pink-500/20 
+                   text-rose-300 border-2 border-rose-500/40 rounded-xl text-sm font-bold 
+                   shadow-lg">
+              ❌ Abgelehnt
+            </span>
+          }
+          else if (p.Status == ProposalStatus.Error)
+          {
+            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-rose-500/20 to-pink-500/20 
+                   text-rose-300 border-2 border-rose-500/40 rounded-xl text-sm font-bold 
+                   shadow-lg">
+              ⚠️ Fehler
+            </span>
+          }
+        </td>
+
+        <!-- Buttons: immer nebeneinander -->
+        <td class="px-6 py-5 text-center whitespace-nowrap">
+          @if (p.Status == ProposalStatus.Pending)
+          {
+            <div class="flex gap-2 justify-center">
+              <button class="btn-primary text-sm px-5 py-2.5 shadow-xl hover:shadow-2xl hover:scale-105 min-w-[80px]"
+                      @onclick="() => OnApprove.InvokeAsync(p)">
+                  <span class="inline-flex items-center gap-1">
+                    ✅ Approve
+                  </span>
+              </button>
+              <button class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 
+                               text-white text-sm px-5 py-2.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl 
+                               hover:scale-105 transition-all duration-200 min-w-[80px]"
+                      @onclick="() => OnReject.InvokeAsync(p)">
+                ❌ Reject
+              </button>
+            </div>
+          }
+          else
+          {
+            <span
+              class="text-emerald-400 text-sm font-bold bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/30">
+                ✅ Erledigt
+            </span>
+          }
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+</div>
+
+@code {
+    [Parameter]
+    public List<RenameProposal> Proposals { get; set; } = new();
+    
+    [Parameter]
+    public EventCallback<RenameProposal> OnApprove { get; set; }
+    
+    [Parameter]
+    public EventCallback<RenameProposal> OnReject { get; set; }
+}

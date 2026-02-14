@@ -9,187 +9,133 @@
 <PageTitle>MediaRenamer Proposals</PageTitle>
 <h1 class="text-2xl font-bold mb-4">Media Rename Proposals</h1>
 
-<!-- Mobile-first Table -->
-<div class="glass-card overflow-x-auto rounded-2xl shadow-2xl">
-  <table class="min-w-[800px] w-full divide-y divide-white/10">  <!-- min-width für Mobile-Scroll -->
-    <thead class="bg-white/5 backdrop-blur-sm sticky top-0 z-10">
-    <tr>
-      <th class="px-6 py-4 text-left font-bold text-slate-200 text-sm uppercase tracking-wider">
-        📁 Datei
-      </th>
-      <th class="px-6 py-4 text-left font-bold text-slate-200 text-sm uppercase tracking-wider">
-        ✨ Vorschlag
-      </th>
-      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider hidden md:table-cell">
-        🎬 Typ
-      </th>
-      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider hidden lg:table-cell">
-        📅 Jahr
-      </th>
-      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider">
-        🔔 Status
-      </th>
-      <th class="px-6 py-4 text-center font-bold text-slate-200 text-sm uppercase tracking-wider">
-        ⚡ Aktion
-      </th>
-    </tr>
-    </thead>
-    <tbody class="divide-y divide-white/5 bg-white/2 backdrop-blur-sm">
-    @foreach (var p in _proposals)
-    {
-      <tr class="hover:bg-white/5 transition-all group">
-        <!-- Datei: FULL Name, Icon -->
-        <td class="px-6 py-5 break-all max-w-xs">
-              <div class="font-mono text-slate-200 text-sm break-all">@Path.GetFileName(p.Source.OriginalPath)</div>
-        </td>
-
-        <!-- Vorschlag: FULL Text, bold -->
-        <td class="px-6 py-5 text-emerald-300 text-sm leading-tight">
-          @p.ProposedName
-        </td>
-
-        <!-- Typ: Icon + Badge -->
-        <td class="px-6 py-5 text-center hidden md:table-cell">
-            <span
-              class="inline-flex px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-sm font-bold text-slate-200 shadow-md">
-              @(p.Source.Type == MediaType.Movie ? "🎬 Film" : "📺 Serie")
+<!-- Tab Navigation -->
+<div class="flex gap-2 mb-6">
+    <button class="tab-btn @(_activeTabEquals("aktuell") ? "active" : "")" @onclick="SetAktuellTab">
+        📋 Aktuell
+        @if (_pendingCount > 0)
+        {
+            <span class="ml-2 px-2 py-0.5 bg-yellow-500/20 text-yellow-300 rounded-full text-xs font-bold">
+                @_pendingCount
             </span>
-        </td>
-
-        <!-- Jahr: centered -->
-        <td class="px-6 py-5 text-center hidden lg:table-cell text-lg font-bold text-slate-200">
-          @p.Source.Year
-        </td>
-
-        <!-- Status: fixed, no wrap -->
-        <td class="px-6 py-5 text-center whitespace-nowrap">
-          @if (p.Status == ProposalStatus.Pending)
-          {
-            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 
-                           text-yellow-300 border-2 border-yellow-500/40 rounded-xl text-sm font-bold 
-                           shadow-lg animate-pulse">
-                ⏳ Warten auf Approval
-              </span>
-          }
-          else if (p.Status == ProposalStatus.Approved || p.Status == ProposalStatus.Processed)
-          {
-            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 
-                           text-emerald-300 border-2 border-emerald-500/40 rounded-xl text-sm font-bold 
-                           shadow-lg">
-                ✅ Umbenannt
-              </span>
-          }
-          else if (p.Status == ProposalStatus.Rejected)
-          {
-            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-rose-500/20 to-pink-500/20 
-                   text-rose-300 border-2 border-rose-500/40 rounded-xl text-sm font-bold 
-                   shadow-lg">
-              ❌ Abgelehnt
-            </span>
-          }
-          else if (p.Status == ProposalStatus.Error)
-          {
-            <span class="inline-flex px-4 py-2 bg-gradient-to-r from-rose-500/20 to-pink-500/20 
-                   text-rose-300 border-2 border-rose-500/40 rounded-xl text-sm font-bold 
-                   shadow-lg">
-              ⚠️ Fehler
-            </span>
-          }
-        </td>
-
-        <!-- Buttons: immer nebeneinander -->
-        <td class="px-6 py-5 text-center whitespace-nowrap">
-          @if (p.Status == ProposalStatus.Pending)
-          {
-            <div class="flex gap-2 justify-center">
-              <button class="btn-primary text-sm px-5 py-2.5 shadow-xl hover:shadow-2xl hover:scale-105 min-w-[80px]"
-                      @onclick="() => Approve(p)">
-                  <span class="inline-flex items-center gap-1">
-                    ✅ Approve
-                  </span>
-              </button>
-              <button class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 
-                               text-white text-sm px-5 py-2.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl 
-                               hover:scale-105 transition-all duration-200 min-w-[80px]"
-                      @onclick="() => Reject(p)">
-                ❌ Reject
-              </button>
-            </div>
-          }
-          else
-          {
-            <span
-              class="text-emerald-400 text-sm font-bold bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/30">
-                ✅ Erledigt
-              </span>
-          }
-        </td>
-      </tr>
-    }
-    </tbody>
-  </table>
+        }
+    </button>
+    <button class="tab-btn @(_activeTabEquals("historie") ? "active" : "")" @onclick="SetHistorieTab">
+        📜 Historie
+    </button>
 </div>
 
+@if (_activeTab == "aktuell")
+{
+    <!-- Aktuelle Liste: Pending + Zuletzt bearbeitete -->
+    @if (_currentProposals.Count == 0)
+    {
+        <div class="glass-card p-8 text-center">
+            <p class="text-slate-400 text-lg">✨ Keine offenen Vorschläge</p>
+        </div>
+    }
+    else
+    {
+        <div class="mb-4 text-sm text-slate-400">
+            Zeige @_pendingCount offene und @_recentlyProcessedCount zuletzt bearbeitete
+        </div>
+        <ProposalsTable Proposals="_currentProposals" OnApprove="Approve" OnReject="Reject" />
+    }
+}
+else
+{
+    <!-- Historie: Alle bearbeiteten Proposals -->
+    @if (_historyProposals.Count == 0)
+    {
+        <div class="glass-card p-8 text-center">
+            <p class="text-slate-400 text-lg">📭 Keine Historie vorhanden</p>
+        </div>
+    }
+    else
+    {
+        <div class="mb-4 text-sm text-slate-400">
+            @_historyProposals.Count Einträge in der Historie
+        </div>
+        <ProposalsTable Proposals="_historyProposals" OnApprove="Approve" OnReject="Reject" />
+    }
+}
 
 @code {
-  private List<RenameProposal> _proposals = new();
-  private Timer? _timer;
-  private bool _isLoading;
+    private List<RenameProposal> _currentProposals = new();
+    private List<RenameProposal> _historyProposals = new();
+    private List<RenameProposal> _allProposals = new();
+    private Timer? _timer;
+    private string _activeTab = "aktuell";
+    private int _pendingCount;
+    private int _recentlyProcessedCount;
+    private const int RecentLimit = 10;
 
-  protected override async Task OnInitializedAsync()
-  {
-    await LoadProposals();
+    private bool _activeTabEquals(string tab) => _activeTab == tab;
+    private void SetAktuellTab() => _activeTab = "aktuell";
+    private void SetHistorieTab() => _activeTab = "historie";
 
-    // TODO: make interval configurable -> same as scanning in api
-    int period = Configuration.GetValue<int>("Media:ScanInterval");
-    _timer = new Timer(async _ =>
+    protected override async Task OnInitializedAsync()
     {
-      await InvokeAsync(async () =>
-      {
         await LoadProposals();
-        StateHasChanged();
-      });
-    }, null, 5000, period * 1000);
-  }
 
-  private async Task LoadProposals()
-  {
-    try
-    {
-      _proposals = await Client.GetProposalsAsync();
+        // TODO: make interval configurable -> same as scanning in api
+        int period = Configuration.GetValue<int>("Media:ScanInterval");
+        _timer = new Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadProposals();
+                StateHasChanged();
+            });
+        }, null, 5000, period * 1000);
     }
-    catch (Exception ex)
+
+    private async Task LoadProposals()
     {
-      // Log oder Toast-Error
-      Console.WriteLine($"LoadProposals Error: {ex.Message}");
+        try
+        {
+            _allProposals = await Client.GetProposalsAsync();
+            
+            // Split into pending and processed
+            var pending = _allProposals.Where(p => p.Status == ProposalStatus.Pending).OrderByDescending(p => p.ScanTime).ToList();
+            var processed = _allProposals.Where(p => p.Status != ProposalStatus.Pending).OrderByDescending(p => p.ScanTime).ToList();
+            
+            _pendingCount = pending.Count;
+            _recentlyProcessedCount = Math.Min(RecentLimit, processed.Count);
+            
+            // Current = pending + recently processed
+            _currentProposals = pending.Take(50).Concat(processed.Take(RecentLimit)).OrderByDescending(p => p.ScanTime).ToList();
+            
+            // History = all processed
+            _historyProposals = processed;
+        }
+        catch (Exception ex)
+        {
+            // Log oder Toast-Error
+            Console.WriteLine($"LoadProposals Error: {ex.Message}");
+        }
     }
-  }
 
-  private async Task Approve(RenameProposal proposal)
-  {
-    await Client.ApproveAsync(proposal.Id);
-    await LoadProposals();
-  }
+    private async Task Approve(RenameProposal proposal)
+    {
+        await Client.ApproveAsync(proposal.Id);
+        await LoadProposals();
+    }
 
-  private async Task Reject(RenameProposal proposal)
-  {
-    await Client.RejectAsync(proposal.Id);
-    await LoadProposals();
-  }
+    private async Task Reject(RenameProposal proposal)
+    {
+        await Client.RejectAsync(proposal.Id);
+        await LoadProposals();
+    }
 
-  public ValueTask DisposeAsync()
-  {
-    _timer?.DisposeAsync();
-    return ValueTask.CompletedTask;
-  }
+    public ValueTask DisposeAsync()
+    {
+        _timer?.DisposeAsync();
+        return ValueTask.CompletedTask;
+    }
 
-  private async Task Refresh()
-  {
-    _isLoading = true;
-    StateHasChanged();
-    _proposals = await Client.GetProposalsAsync();
-    _isLoading = false;
-    StateHasChanged();
-  }
-
+    private async Task Refresh()
+    {
+        await LoadProposals();
+    }
 }

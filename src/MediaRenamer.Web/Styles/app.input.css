@@ -35,6 +35,18 @@
         shadow-emerald-500/25 ring-emerald-400/40 scale-[1.02];
     }
 
+    .tab-btn {
+        @apply px-6 py-3 text-lg font-semibold rounded-xl transition-all duration-300
+        text-slate-300 hover:text-white hover:bg-white/10
+        ring-1 ring-transparent hover:ring-white/20 border border-transparent
+        bg-white/5;
+    }
+
+    .tab-btn.active {
+        @apply bg-emerald-500/30 text-emerald-200 border-emerald-400/50
+        shadow-emerald-500/25 ring-emerald-400/40;
+    }
+
 }
 
 @layer utilities {
