@@ -39,7 +39,7 @@
         <div class="mb-4 text-sm text-slate-400">
             Zeige @_pendingCount offene und @_recentlyProcessedCount zuletzt bearbeitete
         </div>
-        <ProposalsTable Proposals="_currentProposals" OnApprove="Approve" OnReject="Reject" />
+        <ProposalsTable Proposals="_currentProposals" OnApprove="Approve" OnReject="Reject" OnUpdateName="UpdateName" />
     }
 }
 else
@@ -56,7 +56,7 @@ else
         <div class="mb-4 text-sm text-slate-400">
             @_historyProposals.Count Einträge in der Historie
         </div>
-        <ProposalsTable Proposals="_historyProposals" OnApprove="Approve" OnReject="Reject" />
+        <ProposalsTable Proposals="_historyProposals" OnApprove="Approve" OnReject="Reject" OnUpdateName="UpdateName" />
     }
 }
 
@@ -125,6 +125,12 @@ else
     private async Task Reject(RenameProposal proposal)
     {
         await Client.RejectAsync(proposal.Id);
+        await LoadProposals();
+    }
+
+    private async Task UpdateName((RenameProposal Proposal, string NewName) args)
+    {
+        await Client.UpdateProposedNameAsync(args.Proposal.Id, args.NewName);
         await LoadProposals();
     }
 

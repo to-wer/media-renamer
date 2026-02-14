@@ -39,4 +39,10 @@ public class ProposalClient(HttpClient http)
         var response = await http.GetFromJsonAsync<ProposalStats>("api/media/stats");
         return response ?? new ProposalStats();
     }
+
+    public async Task UpdateProposedNameAsync(Guid proposalId, string proposedName)
+    {
+        var response = await http.PutAsJsonAsync($"api/media/update/{proposalId}", new { ProposedName = proposedName });
+        response.EnsureSuccessStatusCode();
+    }
 }

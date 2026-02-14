@@ -89,4 +89,23 @@ public class MediaController(
     [HttpGet("history")]
     public async Task<ActionResult<List<RenameProposal>>> GetHistory() =>
         Ok(await proposalStore.GetHistory());
+
+    [HttpPut("update/{id:guid}")]
+    public async Task<IActionResult> UpdateProposedName(Guid id, [FromBody] UpdateProposalRequest request)
+    {
+        var proposal = await proposalStore.GetById(id);
+        if (proposal == null)
+            return NotFound();
+
+        if (proposal.Status != ProposalStatus.Pending)
+            return BadRequest("Can only update pending proposals");
+
+        await proposalStore.UpdateProposedName(id, request.ProposedName);
+        return Ok();
+    }
+}
+
+public class UpdateProposalRequest
+{
+    public string ProposedName { get; set; } = string.Empty;
 }

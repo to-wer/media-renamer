@@ -35,7 +35,37 @@
 
         <!-- Vorschlag: FULL Text, bold -->
         <td class="px-6 py-5 text-emerald-300 text-sm leading-tight">
-          @p.ProposedName
+          @if (_editingProposalId == p.Id)
+          {
+            <div class="flex gap-2">
+              <input type="text" 
+                     @bind="_editValue" 
+                     class="w-full bg-white/10 border border-emerald-500/50 rounded-lg px-3 py-2 text-emerald-300 text-sm focus:outline-none focus:border-emerald-400"
+                     @onkeydown="(e) => HandleKeyDown(e, p)" />
+              <button class="btn-primary text-sm px-3 py-2" @onclick="() => SaveEdit(p)">
+                💾
+              </button>
+              <button class="bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 
+                             text-white text-sm px-3 py-2 rounded-lg font-semibold transition-all"
+                      @onclick="CancelEdit">
+                ❌
+              </button>
+            </div>
+          }
+          else
+          {
+            <div class="flex items-center gap-2">
+              <span>@p.ProposedName</span>
+              @if (p.Status == ProposalStatus.Pending)
+              {
+                <button class="text-slate-400 hover:text-emerald-400 transition-colors p-1" 
+                        @onclick="() => StartEdit(p)" 
+                        title="Manuell bearbeiten">
+                  ✏️
+                </button>
+              }
+            </div>
+          }
         </td>
 
         <!-- Typ: Icon + Badge -->
@@ -99,8 +129,8 @@
                   </span>
               </button>
               <button class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 
-                               text-white text-sm px-5 py-2.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl 
-                               hover:scale-105 transition-all duration-200 min-w-[80px]"
+                             text-white text-sm px-5 py-2.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl 
+                             hover:scale-105 transition-all duration-200 min-w-[80px]"
                       @onclick="() => OnReject.InvokeAsync(p)">
                 ❌ Reject
               </button>
@@ -129,4 +159,43 @@
     
     [Parameter]
     public EventCallback<RenameProposal> OnReject { get; set; }
+    
+    [Parameter]
+    public EventCallback<(RenameProposal Proposal, string NewName)> OnUpdateName { get; set; }
+
+    private Guid? _editingProposalId;
+    private string _editValue = string.Empty;
+
+    private void StartEdit(RenameProposal proposal)
+    {
+        _editingProposalId = proposal.Id;
+        _editValue = proposal.ProposedName;
+    }
+
+    private void CancelEdit()
+    {
+        _editingProposalId = null;
+        _editValue = string.Empty;
+    }
+
+    private async Task SaveEdit(RenameProposal proposal)
+    {
+        if (!string.IsNullOrWhiteSpace(_editValue) && _editValue != proposal.ProposedName)
+        {
+            await OnUpdateName.InvokeAsync((proposal, _editValue));
+        }
+        CancelEdit();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e, RenameProposal proposal)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveEdit(proposal);
+        }
+        else if (e.Key == "Escape")
+        {
+            CancelEdit();
+        }
+    }
 }

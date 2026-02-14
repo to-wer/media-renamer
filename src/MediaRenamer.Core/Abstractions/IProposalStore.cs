@@ -16,4 +16,5 @@ public interface IProposalStore
     Task<List<RenameProposal>> GetPending();
     Task<List<RenameProposal>> GetHistory();
     Task SetStatus(Guid id, ProposalStatus status);
+    Task UpdateProposedName(Guid id, string proposedName);
 }

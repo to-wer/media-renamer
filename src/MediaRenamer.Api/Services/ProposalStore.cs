@@ -130,4 +130,14 @@ public class ProposalStore(ProposalDbContext dbContext) : IProposalStore
             await dbContext.SaveChangesAsync();
         }
     }
+
+    public async Task UpdateProposedName(Guid id, string proposedName)
+    {
+        var prop = await GetById(id);
+        if (prop != null)
+        {
+            prop.ProposedName = proposedName;
+            await dbContext.SaveChangesAsync();
+        }
+    }
 }
