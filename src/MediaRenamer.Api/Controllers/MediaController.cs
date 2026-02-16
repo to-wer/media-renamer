@@ -9,6 +9,7 @@ namespace MediaRenamer.Api.Controllers;
 public class MediaController(
     IRenameService renamer,
     IProposalStore proposalStore,
+    IFileSystemService fileSystemService,
     ILogger<MediaController> logger) : ControllerBase
 {
     [HttpGet("proposals")]
@@ -28,7 +29,7 @@ public class MediaController(
             return NotFound();
 
         // Check if the source file still exists
-        if (!System.IO.File.Exists(proposal.Source.OriginalPath))
+        if (!fileSystemService.FileExists(proposal.Source.OriginalPath))
         {
             if (logger.IsEnabled(LogLevel.Warning))
             {

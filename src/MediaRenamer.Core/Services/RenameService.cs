@@ -7,7 +7,8 @@ namespace MediaRenamer.Core.Services;
 
 public class RenameService(
     IOptions<MediaSettings> settings,
-    ILogger<RenameService> logger) : IRenameService
+    ILogger<RenameService> logger,
+    IFileSystemService fileSystemService) : IRenameService
 {
     private readonly MediaSettings _settings = settings.Value;
 
@@ -39,35 +40,40 @@ public class RenameService(
             var targetPath = Path.Combine(libraryPath, proposal.ProposedName + extension);
 
             var targetDir = Path.GetDirectoryName(targetPath);
-            if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
+            if (!string.IsNullOrEmpty(targetDir) && !fileSystemService.DirectoryExists(targetDir))
             {
-                Directory.CreateDirectory(targetDir);
+                fileSystemService.CreateDirectory(targetDir);
                 if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("Created directory: {Directory}", targetDir);
             }
 
             // Handle duplicate files based on the configured strategy
-            if (File.Exists(targetPath))
+            if (fileSystemService.FileExists(targetPath))
             {
                 switch (_settings.DuplicateFileHandling)
                 {
-                    case Models.DuplicateFileHandling.Skip:
-                        logger.LogWarning("Skipping rename: Target file already exists: {TargetPath}", targetPath);
+                    case DuplicateFileHandling.Skip:
+                        if (logger.IsEnabled(LogLevel.Information))
+                            logger.LogInformation("Skipping rename: Target file already exists: {TargetPath}",
+                                targetPath);
                         return ProposalStatus.Skipped;
 
-                    case Models.DuplicateFileHandling.Overwrite:
-                        logger.LogInformation("Overwriting existing file: {TargetPath}", targetPath);
-                        File.Delete(targetPath);
+                    case DuplicateFileHandling.Overwrite:
+                        if (logger.IsEnabled(LogLevel.Information))
+                            logger.LogInformation("Overwriting existing file: {TargetPath}", targetPath);
+                        fileSystemService.DeleteFile(targetPath);
                         break;
 
-                    case Models.DuplicateFileHandling.RenameWithSuffix:
+                    case DuplicateFileHandling.RenameWithSuffix:
                         targetPath = GetUniqueFilePath(targetPath);
-                        logger.LogInformation("Using alternative filename to avoid conflict: {TargetPath}", targetPath);
+                        if (logger.IsEnabled(LogLevel.Information))
+                            logger.LogInformation("Using alternative filename to avoid conflict: {TargetPath}",
+                                targetPath);
                         break;
                 }
             }
 
-            File.Move(proposal.Source.OriginalPath, targetPath);
+            fileSystemService.MoveFile(proposal.Source.OriginalPath, targetPath);
             if (logger.IsEnabled(LogLevel.Information))
                 logger.LogInformation("Renamed: {Source} → {Target}",
                     proposal.Source.OriginalPath, targetPath);
@@ -80,14 +86,14 @@ public class RenameService(
         }
     }
 
-    private static string GetUniqueFilePath(string filePath)
+    private string GetUniqueFilePath(string filePath)
     {
         var directory = Path.GetDirectoryName(filePath) ?? string.Empty;
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
         var extension = Path.GetExtension(filePath);
         var counter = 1;
 
-        while (File.Exists(filePath))
+        while (fileSystemService.FileExists(filePath))
         {
             filePath = Path.Combine(directory, $"{fileNameWithoutExtension}_{counter}{extension}");
             counter++;

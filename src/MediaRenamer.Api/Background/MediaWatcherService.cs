@@ -1,9 +1,6 @@
-using MediaRenamer.Api.Data;
-using MediaRenamer.Api.Services;
 using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace MediaRenamer.Api.Background;
@@ -14,7 +11,8 @@ public class MediaWatcherService(
     MetadataResolver resolver,
     IRenameService renamer,
     IOptions<MediaSettings> mediaSettings,
-    IServiceScopeFactory scopeFactory)
+    IServiceScopeFactory scopeFactory,
+    IFileSystemService fileSystemService)
     : BackgroundService
 {
     private readonly MediaSettings _mediaSettings = mediaSettings.Value;
@@ -34,8 +32,7 @@ public class MediaWatcherService(
                 var proposalStore = scope.ServiceProvider.GetRequiredService<IProposalStore>();
 
                 // Scan for media files
-                var files = Directory
-                    .GetFiles(_mediaSettings.WatchPath, "*.*", SearchOption.AllDirectories)
+                var files = fileSystemService.GetFiles(_mediaSettings.WatchPath)
                     .Where(f => f.EndsWith(".mkv") || f.EndsWith(".mp4"));
 
                 var pendingFiles = await proposalStore.GetPending();
@@ -44,7 +41,7 @@ public class MediaWatcherService(
                 var idsToDelete = new List<Guid>();
                 foreach (var pendingProposal in pendingFiles)
                 {
-                    if (File.Exists(pendingProposal.Source.OriginalPath)) continue;
+                    if (fileSystemService.FileExists(pendingProposal.Source.OriginalPath)) continue;
                     if (logger.IsEnabled(LogLevel.Warning))
                     {
                         logger.LogWarning("File not found during scan, deleting proposal: {filePath}",

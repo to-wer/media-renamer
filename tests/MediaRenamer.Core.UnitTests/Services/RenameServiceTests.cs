@@ -1,3 +1,4 @@
+using MediaRenamer.Core.Abstractions;
 using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -11,8 +12,8 @@ public class RenameServiceTests
 {
     private readonly IOptions<MediaSettings> _settings = Substitute.For<IOptions<MediaSettings>>();
     private readonly ILogger<RenameService> _logger = Substitute.For<ILogger<RenameService>>();
-    private RenameService _renameService;
-
+    private readonly IFileSystemService _fileSystemService = new FileSystemService();
+    
     private string _testDirectory;
     private string _inputDirectory;
     private string _outputDirectory;
@@ -33,8 +34,6 @@ public class RenameServiceTests
             OutputPath = _outputDirectory
         };
         _settings.Value.Returns(mediaSettings);
-
-        _renameService = new RenameService(_settings, _logger);
     }
 
     [TearDown]
@@ -71,9 +70,10 @@ public class RenameServiceTests
             Status = ProposalStatus.Pending,
             ScanTime = DateTime.UtcNow
         };
-
+        var renameService = new RenameService(_settings, _logger, _fileSystemService);
+        
         // Act
-        var proposalStatus = _renameService.Execute(renameProposal);
+        var proposalStatus = renameService.Execute(renameProposal);
 
         // Assert
         proposalStatus.ShouldBe(ProposalStatus.Processed);
@@ -109,9 +109,10 @@ public class RenameServiceTests
             Status = ProposalStatus.Pending,
             ScanTime = DateTime.UtcNow
         };
-
+        var renameService = new RenameService(_settings, _logger, _fileSystemService);
+        
         // Act
-        var proposalStatus = _renameService.Execute(renameProposal);
+        var proposalStatus = renameService.Execute(renameProposal);
 
         // Assert
         proposalStatus.ShouldBe(ProposalStatus.Skipped);
@@ -155,10 +156,10 @@ public class RenameServiceTests
             DuplicateFileHandling = DuplicateFileHandling.Overwrite
         };
         _settings.Value.Returns(mediaSettings);
-        _renameService = new RenameService(_settings, _logger);
-
+        var renameService = new RenameService(_settings, _logger, _fileSystemService);
+        
         // Act
-        var proposalStatus = _renameService.Execute(renameProposal);
+        var proposalStatus = renameService.Execute(renameProposal);
 
         // Assert
         proposalStatus.ShouldBe(ProposalStatus.Processed);
@@ -203,10 +204,10 @@ public class RenameServiceTests
             DuplicateFileHandling = DuplicateFileHandling.RenameWithSuffix
         };
         _settings.Value.Returns(mediaSettings);
-        _renameService = new RenameService(_settings, _logger);
-
+        var renameService = new RenameService(_settings, _logger, _fileSystemService);
+        
         // Act
-        var proposalStatus = _renameService.Execute(renameProposal);
+        var proposalStatus = renameService.Execute(renameProposal);
 
         // Assert
         proposalStatus.ShouldBe(ProposalStatus.Processed);
@@ -241,9 +242,10 @@ public class RenameServiceTests
             Status = ProposalStatus.Pending,
             ScanTime = DateTime.UtcNow
         };
-
+        var renameService = new RenameService(_settings, _logger, _fileSystemService);
+        
         // Act
-        var proposalStatus = _renameService.Execute(renameProposal);
+        var proposalStatus = renameService.Execute(renameProposal);
 
         // Assert
         proposalStatus.ShouldBe(ProposalStatus.Processed);

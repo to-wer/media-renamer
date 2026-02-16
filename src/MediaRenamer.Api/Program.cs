@@ -33,6 +33,7 @@ try
     builder.Services.Configure<MetadataProviderSettings>(builder.Configuration.GetSection("MetadataProviders"));
     builder.Services.Configure<MediaSettings>(builder.Configuration.GetSection("Media"));
 
+    builder.Services.AddSingleton<IFileSystemService, FileSystemService>();
     builder.Services.AddSingleton<IFilenameParserService, FilenameParserService>();
     builder.Services.AddSingleton<IMediaScanner, MediaScanner>();
 

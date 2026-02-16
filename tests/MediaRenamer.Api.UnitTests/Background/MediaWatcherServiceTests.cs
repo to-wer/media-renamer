@@ -18,6 +18,7 @@ public class MediaWatcherServiceTests
     private readonly IProposalStore _proposalStore = Substitute.For<IProposalStore>();
     private readonly IServiceScopeFactory _serviceScopeFactory = Substitute.For<IServiceScopeFactory>();
     private readonly IMetadataProvider _metadataProvider = Substitute.For<IMetadataProvider>();
+    private readonly IFileSystemService _fileSystemService = Substitute.For<IFileSystemService>();
     private MediaWatcherService _mediaWatcherService;
     
     private string _testDirectory;
@@ -51,7 +52,7 @@ public class MediaWatcherServiceTests
         List<IMetadataProvider> providers = [_metadataProvider];
         var resolver = new MetadataResolver(providers, Substitute.For<ILogger<MetadataResolver>>());
         _mediaWatcherService = new MediaWatcherService(_logger, _mediaScanner, resolver, _renameService, _mediaSettings,
-            _serviceScopeFactory);
+            _serviceScopeFactory, _fileSystemService);
     }
 
     [TearDown]
@@ -78,6 +79,7 @@ public class MediaWatcherServiceTests
         var testContent = "test file content";
         await File.WriteAllTextAsync(testFilePath, testContent);
 
+        _fileSystemService.GetFiles(_inputDirectory).Returns([testFilePath]);
         _mediaScanner.AnalyzeAsync(testFilePath).Returns(Task.FromResult(mediaFile));
         _metadataProvider.EnrichAsync(mediaFile).Returns(Task.FromResult<MediaFile?>(null));
         _proposalStore.GetPending().Returns(Task.FromResult(new List<RenameProposal>()));
