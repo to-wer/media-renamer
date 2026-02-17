@@ -70,7 +70,6 @@ public static class StringExtensions
             else if (RemovableCharacters.Contains(c))
             {
                 // Skip special characters
-                continue;
             }
             else
             {
@@ -103,5 +102,19 @@ public static class StringExtensions
             
         // Just collapse spaces and trim for display
         return input.ReplaceMultipleSpaces();
+    }
+    
+    public static string ExtractSeriesName(this string filename)
+    {
+        var episodeMatch = Regex.Match(filename, @"S(\d+)E(\d+)", RegexOptions.IgnoreCase);
+
+        if (!episodeMatch.Success)
+            return filename;
+
+        var seriesName = filename.Substring(0, episodeMatch.Index)
+            .Replace('.', ' ')
+            .Trim();
+
+        return seriesName;
     }
 }

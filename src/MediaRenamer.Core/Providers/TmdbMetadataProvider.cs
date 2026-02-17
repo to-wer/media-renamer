@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks.Dataflow;
 using MediaRenamer.Core.Abstractions;
+using MediaRenamer.Core.Extensions;
 using MediaRenamer.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,8 @@ public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataPro
 {
     private readonly TMDbClient _client = new(metadataProviderSettings.Value.TmdbApiKey ?? throw new ArgumentException("MetadataProviders:TmdbApiKey"));
 
+    private const string LanguageGerman = "de-DE";
+    
     public async Task<MediaFile?> EnrichAsync(MediaFile file)
     {
         return file.Type switch
@@ -28,7 +31,7 @@ public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataPro
     {
         var (baseTitle, year) = ExtractMovieInfo(file.FileName);
 
-        var result = await _client.SearchMovieAsync(file.ParsedTitle ?? baseTitle, language: "de-DE");
+        var result = await _client.SearchMovieAsync(file.ParsedTitle ?? baseTitle, language: LanguageGerman);
 
         if ((result?.TotalResults ?? 0) == 0)
         {
@@ -38,10 +41,10 @@ public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataPro
             
             // Retry without year
             var yearlessName = Regex.Replace(file.FileName, @"\s\(\d{4}\)$", "");
-            result = await _client.SearchMovieAsync(yearlessName, language: "de-DE");
+            result = await _client.SearchMovieAsync(yearlessName, language: LanguageGerman);
         }
         
-        var movie = result.Results.FirstOrDefault(x => string.IsNullOrEmpty(year) || x.ReleaseDate?.Year.ToString() == year);
+        var movie = result?.Results?.FirstOrDefault(x => string.IsNullOrEmpty(year) || x.ReleaseDate?.Year.ToString() == year);
         if (movie == null)
         {
             if(logger.IsEnabled(LogLevel.Debug))
@@ -72,10 +75,10 @@ public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataPro
 
     private async Task<MediaFile?> EnrichEpisode(MediaFile file)
     {
-        var seriesName = ExtractSeriesName(file.FileName);
+        var seriesName = file.FileName.ExtractSeriesName();
 
-        var search = await _client.SearchTvShowAsync(seriesName, language: "de-DE");
-        var show = search.Results.FirstOrDefault();
+        var search = await _client.SearchTvShowAsync(seriesName, language: LanguageGerman);
+        var show = search?.Results?.FirstOrDefault();
 
         if (show == null || !file.Season.HasValue || !file.Episode.HasValue)
             return null;
@@ -84,7 +87,7 @@ public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataPro
             show.Id,
             file.Season.Value,
             file.Episode.Value,
-            language: "de-DE"
+            language: LanguageGerman
         );
 
         file.Title = show.Name;
@@ -92,19 +95,5 @@ public class TmdbMetadataProvider(IOptions<MetadataProviderSettings> metadataPro
         file.EpisodeTitle = episode?.Name;
 
         return file;
-    }
-    
-    private string ExtractSeriesName(string filename)
-    {
-        var episodeMatch = Regex.Match(filename, @"S(\d+)E(\d+)", RegexOptions.IgnoreCase);
-
-        if (!episodeMatch.Success)
-            return filename;
-
-        var seriesName = filename.Substring(0, episodeMatch.Index)
-            .Replace('.', ' ')
-            .Trim();
-
-        return seriesName;
     }
 }

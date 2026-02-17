@@ -13,9 +13,4 @@ public interface IFilenameParserService
     /// <param name="filename">The filename to parse.</param>
     /// <returns>A parsed media title object.</returns>
     ParsedMediaTitle Parse(string filename);
-    
-    /// <summary>
-    /// Gets the current parser configuration.
-    /// </summary>
-    ParserConfiguration Configuration { get; }
 }

@@ -38,11 +38,6 @@ public class FilenameParserService : IFilenameParserService
         _episodeRegex = new Lazy<Regex>(() => new Regex(@"s\d+e\d+|staffel\s*\d+|season\s*\d+|folge\s*\d+|episode\s*\d+", RegexOptions.Compiled | RegexOptions.IgnoreCase));
     }
 
-    /// <summary>
-    /// Gets the current parser configuration.
-    /// </summary>
-    public ParserConfiguration Configuration => _configuration;
-
     public ParsedMediaTitle Parse(string filename)
     {
         if (string.IsNullOrWhiteSpace(filename))
@@ -59,7 +54,7 @@ public class FilenameParserService : IFilenameParserService
 
         var normalized = filename.NormalizeForParsing();
         var (title, year) = ExtractTitleAndYear(normalized);
-        var noise = ExtractNoise(filename, normalized);
+        var noise = ExtractNoise(filename);
 
         var confidence = CalculateConfidence(title.Length, year.HasValue, noise.Count);
 
@@ -85,14 +80,11 @@ public class FilenameParserService : IFilenameParserService
 
         // Get patterns that should be removed from title, sorted by priority
         var removablePatterns = _configuration.Patterns
-            .Where(p => p.IsEnabled && p.RemoveFromTitle)
+            .Where(p => p is { IsEnabled: true, RemoveFromTitle: true })
             .OrderBy(p => p.Priority)
             .ToList();
 
-        foreach (var pattern in removablePatterns)
-        {
-            normalized = ApplyPatternReplacement(normalized, pattern);
-        }
+        normalized = removablePatterns.Aggregate(normalized, ApplyPatternReplacement);
 
         // Extract year
         var yearMatch = _yearRegex.Value.Match(normalized);
@@ -120,7 +112,7 @@ public class FilenameParserService : IFilenameParserService
         }
     }
 
-    private List<string> ExtractNoise(string original, string normalized)
+    private List<string> ExtractNoise(string original)
     {
         var noise = new List<string>();
         var processedPatterns = new HashSet<string>();

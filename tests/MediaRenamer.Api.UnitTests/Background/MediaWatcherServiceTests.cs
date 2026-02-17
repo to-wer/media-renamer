@@ -41,7 +41,6 @@ public class MediaWatcherServiceTests
             OutputPath = _outputDirectory,
             ScanInterval = 30
         });
-        //_configuration.GetValue<int>("Media:ScanInterval").Returns(30);
 
         var serviceProvider = Substitute.For<IServiceProvider>();
         serviceProvider.GetService(typeof(IProposalStore)).Returns(_proposalStore);
@@ -85,12 +84,11 @@ public class MediaWatcherServiceTests
         _proposalStore.GetPending().Returns(Task.FromResult(new List<RenameProposal>()));
         
         // Act
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2)); // Timeout!
-        _mediaWatcherService.StartAsync(cts.Token);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        await _mediaWatcherService.StartAsync(cts.Token);
     
         try
         {
-            // 1 Sekunde warten, damit der Service die Datei verarbeitet
             await Task.Delay(1000, cts.Token);
         }
         finally

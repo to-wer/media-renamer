@@ -160,9 +160,11 @@ public class FilenameParserServiceTests
     [TestCase("Movie.YTS.1080p", "movie", "yts")]
     public void RemovesSourcePatterns(string filename, string expectedTitle, string expectedPattern)
     {
+        // Act
         var result = _parser.Parse(filename);
 
-        result.RemovedNoise.ShouldContain(n => n.ToLower().Contains(expectedPattern.ToLower()));
+        // Assert
+        result.RemovedNoise.ShouldContain(n => n.Contains(expectedPattern, StringComparison.CurrentCultureIgnoreCase));
     }
 
     #endregion
@@ -313,25 +315,6 @@ public class FilenameParserServiceTests
     #endregion
 
     #region Configuration Tests
-
-    [Test]
-    public void HasDefaultConfiguration()
-    {
-        _parser.Configuration.ShouldNotBeNull();
-        _parser.Configuration.Patterns.ShouldNotBeEmpty();
-    }
-
-    [Test]
-    public void ConfigurationContainsExpectedCategories()
-    {
-        var categories = _parser.Configuration.Patterns.Select(p => p.Category).Distinct().ToList();
-
-        categories.ShouldContain(ParserPatternCategory.Resolution);
-        categories.ShouldContain(ParserPatternCategory.Codec);
-        categories.ShouldContain(ParserPatternCategory.AudioCodec);
-        categories.ShouldContain(ParserPatternCategory.Language);
-        categories.ShouldContain(ParserPatternCategory.ReleaseSource);
-    }
 
     [Test]
     public void CustomConfigurationCanBeUsed()

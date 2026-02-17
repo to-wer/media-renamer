@@ -33,7 +33,7 @@ public class MediaController(
         {
             if (logger.IsEnabled(LogLevel.Warning))
             {
-                logger.LogWarning("File not found during approval, deleting proposal: {filePath}",
+                logger.LogWarning("File not found during approval, deleting proposal: {FilePath}",
                     proposal.Source.OriginalPath);
             }
 
@@ -52,7 +52,7 @@ public class MediaController(
             await proposalStore.SetStatus(id, ProposalStatus.Error);
             if (logger.IsEnabled(LogLevel.Error))
             {
-                logger.LogError("Error approving proposal for {filePath}: {error}", proposal.Source.OriginalPath,
+                logger.LogError(ex, "Error approving proposal for {FilePath}: {Error}", proposal.Source.OriginalPath,
                     ex.Message);
             }
 
